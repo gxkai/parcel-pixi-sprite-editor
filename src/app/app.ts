@@ -4,14 +4,11 @@ import {calculateRotatedAngle, calculateRotatedPointCoordinate, mod360} from './
 import Dot from "./dot";
 import Component from "./component";
 import Border from "./border";
-import Rotation from "./rotation";
 (window as any).PIXI = PIXI;
 
 let app: PIXI.Application;
 //矩形框
-let rects = [];
-//当前操作小物件容器
-let activeContainer = null;
+let selections = [];
 //
 const data = {
     pointList: ['lt', 't', 'rt', 'r', 'rb', 'b', 'lb', 'l'], // 八个方向
@@ -71,46 +68,12 @@ function getCursor() {
 function getRandom(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
-// // 旋转角度
-// function calculateRotatedAngle(x0, y0, x1, y1) {
-//     const diff_x = Math.abs(x1 - x0),
-//         diff_y = Math.abs(y1 - y0);
-//     let cita;
-//     if (x1 > x0) {
-//         if (y1 > y0) {
-//             cita = 360 * Math.atan(diff_y / diff_x) / (2 * Math.PI);
-//         } else {
-//             if (y1 < y0) {
-//                 cita = -360 * Math.atan(diff_y / diff_x) / (2 * Math.PI);
-//             } else {
-//                 cita = 0;
-//             }
-//         }
-//     } else {
-//         if (x1 < x0) {
-//             if (y1 > y0) {
-//                 cita = 180 - 360 * Math.atan(diff_y / diff_x) / (2 * Math.PI);
-//             } else {
-//                 if (y1 < y0) {
-//                     cita = 180 + 360 * Math.atan(diff_y / diff_x) / (2 * Math.PI);
-//                 } else {
-//                     cita = 180;
-//                 }
-//             }
-//         } else {
-//             if (y1 > y0) {
-//                 cita = 90;
-//             } else {
-//                 if (y1 < y0) {
-//                     cita = -90;
-//                 } else {
-//                     cita = 0;
-//                 }
-//             }
-//         }
-//     }
-//     return cita;
-// }
+// 清除选中
+function clearSelections() {
+    selections.forEach(_ => {
+        _.visible = false;
+    })
+}
 function setup(params){
     const {x, y, angle} = params
     const object = new Component(params);
@@ -118,13 +81,6 @@ function setup(params){
     app.stage.addChild(object);
 
     const container = object;
-    //=============
-    // const rect = drawRect(object.getGlobalPosition().x, object.getGlobalPosition().y, object.width , object.height, 1);
-    // rect.interactive = true;
-    // rect.buttonMode = true;
-    // rect.visible = true;
-    //
-    // rects.push(rect);
 
     const [
         newLTPoint,
@@ -171,6 +127,7 @@ function setup(params){
         }, {x: x + object.width/2, y: y + object.height/2}, angle)
     ]
     const selection = new PIXI.Container();
+    selections.push(selection);
     const border = new Border([newLTPoint, newRTPoint, newRBPoint, newLBPoint, newLTPoint])
     const rotation = new Dot(calculateRotatedPointCoordinate({
         x: x + object.width/2,
@@ -343,6 +300,7 @@ function setup(params){
             const diff = { x: event.data.global.x - this.x, y: event.data.global.y - this.y }
             const data = event.data;
             let dragging = true;
+            selection.visible = true;
             function onDragEnd() {
                 dragging = false;
             }
@@ -384,6 +342,17 @@ export default function App(parent: HTMLElement, WORLD_WIDTH: number, WORLD_HEIG
     app.renderer.resize(WORLD_WIDTH, WORLD_HEIGHT)
     parent.replaceChild(app.view, parent.lastElementChild); // Hack for parcel HMR
     PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
+
+    let bg = new PIXI.Sprite(PIXI.Texture.WHITE);
+    bg.width = app.screen.width;
+    bg.height = app.screen.height;
+    bg.tint = 0x000000;
+    bg.interactive = true;
+    bg.on('click', function(){
+        console.log('hello');
+        clearSelections();
+    });
+    app.stage.addChild(bg);
     // object
     const params = {
         url: "assets/mask.png",

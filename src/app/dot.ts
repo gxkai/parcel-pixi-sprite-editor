@@ -4,9 +4,6 @@ class Dot extends PIXI.Graphics{
         super();
         this.update(point)
     }
-    private draw() {
-
-    }
 
     public update(point) {
         this.clear()
