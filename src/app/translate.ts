@@ -29,75 +29,12 @@ export function calculateRotatedPointCoordinate(point, center, rotate) {
     }
 }
 
-/**
- * 获取旋转后的点坐标（八个点之一）
- * @param  {Object} style  样式
- * @param  {Object} center 组件中心点
- * @param  {String} name   点名称
- * @return {Object}        旋转后的点坐标
- */
-export function getRotatedPointCoordinate(style, center, name) {
-    let point // point 是未旋转前的坐标
-    switch (name) {
-        case 't':
-            point = {
-                x: style.left + (style.width / 2),
-                y: style.top,
-            }
+// 计算旋转角
+export function calculateRotatedAngle(p1,p2, center) {
+    const angle1 = Math.atan2(p1.y - center.y, p1.x - center.x) * 180/Math.PI;
+    const angle2 = Math.atan2(p2.y - center.y, p2.x - center.x) * 180/Math.PI;
 
-            break
-        case 'b':
-            point = {
-                x: style.left + (style.width / 2),
-                y: style.top + style.height,
-            }
-
-            break
-        case 'l':
-            point = {
-                x: style.left,
-                y: style.top + style.height / 2,
-            }
-
-            break
-        case 'r':
-            point = {
-                x: style.left + style.width,
-                y: style.top + style.height / 2,
-            }
-
-            break
-        case 'lt':
-            point = {
-                x: style.left,
-                y: style.top,
-            }
-
-            break
-        case 'rt':
-            point = {
-                x: style.left + style.width,
-                y: style.top,
-            }
-
-            break
-        case 'lb':
-            point = {
-                x: style.left,
-                y: style.top + style.height,
-            }
-
-            break
-        default: // rb
-            point = {
-                x: style.left + style.width,
-                y: style.top+ style.height,
-            }
-
-            break
-    }
-
-    return calculateRotatedPointCoordinate(point, center, style.rotate)
+    return  angle2 - angle1;
 }
 
 // 求两点之间的中点坐标

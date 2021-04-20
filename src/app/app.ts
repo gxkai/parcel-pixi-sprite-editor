@@ -1,7 +1,10 @@
 import * as PIXI from 'pixi.js-legacy';
-import calculateComponentPositionAndSize from "./calculateComponentPositionAndSize";
-import {calculateRotatedPointCoordinate, mod360} from './translate';
+import calculateComponentPositionAndSize, {calculateSurroundPoints} from "./calculateComponentPositionAndSize";
+import {calculateRotatedAngle, calculateRotatedPointCoordinate, mod360} from './translate';
 import Dot from "./dot";
+import Component from "./component";
+import Border from "./border";
+import Rotation from "./rotation";
 (window as any).PIXI = PIXI;
 
 let app: PIXI.Application;
@@ -68,407 +71,311 @@ function getCursor() {
 function getRandom(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
-// 旋转角度
-function angle(x0, y0, x1, y1) {
-    const diff_x = Math.abs(x1 - x0),
-        diff_y = Math.abs(y1 - y0);
-    let cita;
-    if (x1 > x0) {
-        if (y1 > y0) {
-            cita = 360 * Math.atan(diff_y / diff_x) / (2 * Math.PI);
-        } else {
-            if (y1 < y0) {
-                cita = -360 * Math.atan(diff_y / diff_x) / (2 * Math.PI);
-            } else {
-                cita = 0;
-            }
-        }
-    } else {
-        if (x1 < x0) {
-            if (y1 > y0) {
-                cita = 180 - 360 * Math.atan(diff_y / diff_x) / (2 * Math.PI);
-            } else {
-                if (y1 < y0) {
-                    cita = 180 + 360 * Math.atan(diff_y / diff_x) / (2 * Math.PI);
-                } else {
-                    cita = 180;
-                }
-            }
-        } else {
-            if (y1 > y0) {
-                cita = 90;
-            } else {
-                if (y1 < y0) {
-                    cita = -90;
-                } else {
-                    cita = 0;
-                }
-            }
-        }
-    }
-    return cita;
-}
-// 绘制虚线
-function drawDash(x0, y0, x1, y1, linewidth) {
-    const dashed = new PIXI.Graphics();
-    dashed.lineStyle(1, 0x59e3e8, 1); // linewidth,color,alpha
-    dashed.moveTo(0, 0);
-    dashed.lineTo(linewidth, 0);
-    dashed.moveTo(linewidth * 1.5, 0);
-    dashed.lineTo(linewidth * 2.5, 0);
-    const dashedtexture = dashed.generateCanvasTexture(1, 1);
-    const linelength = Math.pow(Math.pow(x1 - x0, 2) + Math.pow(y1 - y0, 2), 0.5);
-    const tilingSprite = new PIXI.TilingSprite(dashedtexture, linelength, linewidth);
-    tilingSprite.x = x0;
-    tilingSprite.y = y0;
-    tilingSprite.rotation = angle(x0, y0, x1, y1) * Math.PI / 180;
-    tilingSprite.pivot.set(linewidth / 2, linewidth / 2);
-    return tilingSprite;
-}
-// 绘制虚线矩形
-function drawRect(x,y,width,height,linewidth){
-    const rect = new PIXI.Container();
-
-    const top = drawDash(x, y, x + width, y, linewidth); //top border
-    const bottom = drawDash(x, y + height, x + width, y + height, linewidth);//bottom border
-    const left = drawDash(x, y, x, y + height, linewidth); //left border
-    const right = drawDash(x + width, y, x + width, y + height, linewidth); //right border
-    rect.addChild(top);
-    rect.addChild(bottom);
-    rect.addChild(left);
-    rect.addChild(right);
-
-    return rect;
-}
-// 绘制dot
-function drawDot(x, y) {
-    const dot = new PIXI.Graphics();
-    dot.beginFill(0xffffff)
-    dot.drawCircle(x, y, 10);
-    dot.endFill()
-    return dot;
-}
-// 绘制dots
-function drawDots(container: PIXI.Container, x, y, width, height) {
-    const dots = new PIXI.Container();
-    const lt = drawDot(x, y);
-    const rt = drawDot(x+ width, y);
-    const lb = drawDot(x, y + height);
-    const rb = drawDot(x+width, y + height);
-    dots.addChild(lt)
-    dots.addChild(rt)
-    dots.addChild(lb)
-    dots.addChild(rb)
-
-    lt.interactive = true;
-    lt.on('pointerover', function (event) {
-        data.curComponent = container;
-        data.cursors = getCursor();
-        this.cursor = data.cursors['lt']
-    }).on('pointerdown', function(event) {
-        event.stopPropagation();
-        // this.oldPosition = event.data.getLocalPosition(this.parent);
-        // this.containerW = container.width
-        // this.containerH = container.height
-        // this.containerX = container.x
-        // this.containerY = container.y
-        this.dragging = true;
-
-        // 组件中心点
-        this.center = {
-            x: container.x,
-            y: container.y
-        }
-        // 当前点击坐标
-        this.curPoint = {
-            x: this.getGlobalPosition().x,
-            y: this.getGlobalPosition().y
-        }
-        // 获取对称点的坐标
-        this.symmetricPoint = {
-            x: this.center.x - (this.curPoint.x - this.center.x),
-            y: this.center.y - (this.curPoint.y - this.center.y),
-        }
-
-    }).on('pointerup', function(event)  {
-        this.dragging = false;
-    })
-        .on('pointerupoutside', function(event)  {
-            this.dragging = false;
-        } )
-        .on('pointermove', function(event)  {
-            if (this.dragging) {
-                // const newPosition = event.data.getLocalPosition(this.parent);
-                // const diffX = newPosition.x - this.oldPosition.x;
-                // const diffY = newPosition.y - this.oldPosition.y;
-                // container.width = this.containerW - diffX;
-                // container.height = this.containerH - diffY;
-                // container.x = this.containerX + diffX/2;
-                // container.y = this.containerY + diffY/2;
-                const curPosition = {
-                    x: event.data.global.x,
-                    y: event.data.global.y,
-                }
-                calculateComponentPositionAndSize('lt', container, curPosition,{
-                    center: this.center,
-                    curPoint: this.curPoint,
-                    symmetricPoint: this.symmetricPoint,
-                })
-            }
-        })
-
-    // rt.cursor = "ne-resize"
-    // rt.interactive = true;
-    // rt.on('pointerdown', function(event) {
-    //     event.stopPropagation();
-    //     this.oldPosition = event.data.getLocalPosition(this.parent);
-    //     this.containerW = container.width
-    //     this.containerH = container.height
-    //     this.containerX = container.x
-    //     this.containerY = container.y
-    //     this.dragging = true;
-    // }).on('pointerup', function(event)  {
-    //     this.dragging = false;
-    // })
-    //     .on('pointerupoutside', function(event)  {
-    //         this.dragging = false;
-    //     } )
-    //     .on('pointermove', function(event)  {
-    //         if (this.dragging) {
-    //             const newPosition = event.data.getLocalPosition(this.parent);
-    //             const diffX = newPosition.x - this.oldPosition.x;
-    //             const diffY = newPosition.y - this.oldPosition.y;
-    //             container.width = this.containerW + diffX;
-    //             container.height = this.containerH - diffY;
-    //             container.x = this.containerX + diffX/2;
-    //             container.y = this.containerY + diffY/2;
-    //         }
-    //     })
-    //
-    //
-    // lb.cursor = "sw-resize"
-    // lb.interactive = true;
-    // lb.on('pointerdown', function(event) {
-    //     event.stopPropagation();
-    //     this.oldPosition = event.data.getLocalPosition(this.parent);
-    //     this.containerW = container.width
-    //     this.containerH = container.height
-    //     this.containerX = container.x
-    //     this.containerY = container.y
-    //     this.dragging = true;
-    // }).on('pointerup', function(event)  {
-    //     this.dragging = false;
-    // })
-    //     .on('pointerupoutside', function(event)  {
-    //         this.dragging = false;
-    //     } )
-    //     .on('pointermove', function(event)  {
-    //         if (this.dragging) {
-    //             const newPosition = event.data.getLocalPosition(this.parent);
-    //             const diffX = newPosition.x - this.oldPosition.x;
-    //             const diffY = newPosition.y - this.oldPosition.y;
-    //             container.width = this.containerW - diffX;
-    //             container.height = this.containerH + diffY;
-    //             container.x = this.containerX + diffX/2;
-    //             container.y = this.containerY + diffY/2;
-    //         }
-    //     })
-    //
-    // rb.cursor = "se-resize"
-    // rb.interactive = true;
-    // rb.on('pointerdown', function(event) {
-    //     event.stopPropagation();
-    //     this.oldPosition = event.data.getLocalPosition(this.parent);
-    //     this.containerW = container.width
-    //     this.containerH = container.height
-    //     this.containerX = container.x
-    //     this.containerY = container.y
-    //     this.dragging = true;
-    // }).on('pointerup', function(event)  {
-    //     this.dragging = false;
-    // })
-    //     .on('pointerupoutside', function(event)  {
-    //         this.dragging = false;
-    //     } )
-    //     .on('pointermove', function(event)  {
-    //         if (this.dragging) {
-    //             const newPosition = event.data.getLocalPosition(this.parent);
-    //             const diffX = newPosition.x - this.oldPosition.x;
-    //             const diffY = newPosition.y - this.oldPosition.y;
-    //             container.width = this.containerW + diffX;
-    //             container.height = this.containerH + diffY;
-    //             container.x = this.containerX + diffX/2;
-    //             container.y = this.containerY + diffY/2;
-    //         }
-    //     })
-
-    return dots;
-}
-
-//清除矩形框
-function clearRects(){
-    rects.forEach(function(item,index){
-        item.visible = false
-    });
-}
-function onObjectDragStart(event){
-    this.diff = { x: event.data.global.x - this.x, y: event.data.global.y - this.y }
-    this.data = event.data;
-    this.dragging = true;
-    //显示虚线矩形框
-    this.children[0].visible = true
-    activeContainer = this;
-}
-function onDragEnd() {
-    this.dragging = false;
-    this.data = null;
-}
-function onObjectDragMove(){
-    if (this.dragging) {
-        const newPosition = this.data.getLocalPosition(this.parent);
-        this.x = newPosition.x - this.diff.x;
-        this.y = newPosition.y - this.diff.y;
-    }
-}
+// // 旋转角度
+// function calculateRotatedAngle(x0, y0, x1, y1) {
+//     const diff_x = Math.abs(x1 - x0),
+//         diff_y = Math.abs(y1 - y0);
+//     let cita;
+//     if (x1 > x0) {
+//         if (y1 > y0) {
+//             cita = 360 * Math.atan(diff_y / diff_x) / (2 * Math.PI);
+//         } else {
+//             if (y1 < y0) {
+//                 cita = -360 * Math.atan(diff_y / diff_x) / (2 * Math.PI);
+//             } else {
+//                 cita = 0;
+//             }
+//         }
+//     } else {
+//         if (x1 < x0) {
+//             if (y1 > y0) {
+//                 cita = 180 - 360 * Math.atan(diff_y / diff_x) / (2 * Math.PI);
+//             } else {
+//                 if (y1 < y0) {
+//                     cita = 180 + 360 * Math.atan(diff_y / diff_x) / (2 * Math.PI);
+//                 } else {
+//                     cita = 180;
+//                 }
+//             }
+//         } else {
+//             if (y1 > y0) {
+//                 cita = 90;
+//             } else {
+//                 if (y1 < y0) {
+//                     cita = -90;
+//                 } else {
+//                     cita = 0;
+//                 }
+//             }
+//         }
+//     }
+//     return cita;
+// }
 function setup(params){
-    const {x, y, angle, zIndex, url, w, h} = params
-    const object = PIXI.Sprite.from(url);
-    object.width = w;
-    object.height = h;
-    //=============
-    // object.x = x + object.width / 2;
-    // object.y = y + object.height / 2;
-    object.x = x  + object.width / 2;
-    object.y = y + object.height / 2;
-    object.anchor.set(0.5)
+    const {x, y, angle} = params
+    const object = new Component(params);
 
-    // object.pivot.x = object.width / 2;
-    // object.pivot.y = object.height / 2;
-    object.interactive = true;
-    object.buttonMode = true;
-    object.zIndex = zIndex;
-    object.angle = angle;
     app.stage.addChild(object);
 
     const container = object;
     //=============
-
-
-    // const container = new PIXI.Container();
-    // container.interactive = true;
-    // container.buttonMode = true;
-    // container.zIndex = zIndex;
-    const rect = drawRect(object.getGlobalPosition().x, object.getGlobalPosition().y, object.width , object.height, 1);
-    rect.interactive = true;
-    rect.buttonMode = true;
-    rect.visible = true;
-
-    rects.push(rect);
-
-    // const dots = drawDots(container ,object.getGlobalPosition().x, object.getGlobalPosition().y , object.width , object.height);
-
-
-    // container.addChild(rect);
-    // container.addChild(object);
-    // container.addChild(dots)
+    // const rect = drawRect(object.getGlobalPosition().x, object.getGlobalPosition().y, object.width , object.height, 1);
+    // rect.interactive = true;
+    // rect.buttonMode = true;
+    // rect.visible = true;
     //
-    // container.x = x + container.width / 2;
-    // container.y = y + container.height / 2;
-    //
-    // container.pivot.x = container.width / 2;
-    // container.pivot.y = container.height / 2;
-    // container.angle = angle;
-    // app.stage.addChild(container);
+    // rects.push(rect);
 
-    // container
-    //     .on('pointerdown', onObjectDragStart)
-    //     .on('pointerup', onDragEnd)
-    //     .on('pointerupoutside', onDragEnd)
-    //     .on('pointermove', onObjectDragMove)
+    const [
+        newLTPoint,
+        newRTPoint,
+        newLBPoint,
+        newRBPoint,
+        newTPoint,
+        newBPoint,
+        newLPoint,
+        newRPoint
+    ] = [
+        calculateRotatedPointCoordinate({x, y}
+            , {x: x + object.width/2, y: y + object.height/2}, angle
+        ),
+        calculateRotatedPointCoordinate({
+            x: x + object.width,
+            y: y,
+        }, {x: x + object.width/2, y: y + object.height/2}, angle),
+        calculateRotatedPointCoordinate({
+            x: x,
+            y: y + object.height,
+        }, {x: x + object.width/2, y: y + object.height/2}, angle),
+        calculateRotatedPointCoordinate({
+            x: x + object.width,
+            y: y + object.height,
+        }, {x: x + object.width/2, y: y + object.height/2}, angle),
 
-    const dots = new PIXI.Container();
-    const lt = new Dot(calculateRotatedPointCoordinate({x, y}
-    , {x: x + object.width/2, y: y + object.height/2}, angle
-    ));
-    const rt = new Dot(calculateRotatedPointCoordinate({
-        x: x + object.width,
-        y: y,
-    }, {x: x + object.width/2, y: y + object.height/2}, angle));
-    const lb = new Dot(calculateRotatedPointCoordinate({
-        x: x,
-        y: y + object.height,
-    }, {x: x + object.width/2, y: y + object.height/2}, angle));
-    const rb = new Dot(calculateRotatedPointCoordinate({
-        x: x + object.width,
-        y: y + object.height,
-    }, {x: x + object.width/2, y: y + object.height/2}, angle));
-    lt.interactive = true;
-    lt.on('pointerover', function (event) {
-        data.curComponent = container;
-        data.cursors = getCursor();
-        this.cursor = data.cursors['lt']
-    }).on('pointerdown', function(event) {
-        event.stopPropagation();
-        // this.oldPosition = event.data.getLocalPosition(this.parent);
-        // this.containerW = container.width
-        // this.containerH = container.height
-        // this.containerX = container.x
-        // this.containerY = container.y
-        this.dragging = true;
-        // 组件中心点
-        this.center = {
-            x: container.x,
-            y: container.y
-        }
-        // 当前点击坐标
-        this.curPoint = {
+        calculateRotatedPointCoordinate({
+            x: x + object.width/2,
+            y: y
+        }, {x: x + object.width/2, y: y + object.height/2}, angle),
+
+        calculateRotatedPointCoordinate({
+            x: x + object.width/2,
+            y: y + object.height
+        }, {x: x + object.width/2, y: y + object.height/2}, angle),
+        calculateRotatedPointCoordinate({
+            x: x,
+            y: y + object.height/2
+        }, {x: x + object.width/2, y: y + object.height/2}, angle),
+        calculateRotatedPointCoordinate({
+            x: x + object.width,
+            y: y + object.height/2
+        }, {x: x + object.width/2, y: y + object.height/2}, angle)
+    ]
+    const selection = new PIXI.Container();
+    const border = new Border([newLTPoint, newRTPoint, newRBPoint, newLBPoint, newLTPoint])
+    const rotation = new Dot(calculateRotatedPointCoordinate({
+        x: x + object.width/2,
+        y: y + object.height + 50
+    }, {x: x + object.width/2, y: y + object.height/2}, angle))
+    rotation.on('pointerdown', function (event) {
+        let dragging = true;
+        const oldPoint = {
             x: event.data.global.x,
             y: event.data.global.y
         }
-        // 获取对称点的坐标
-        this.symmetricPoint = {
-            x: this.center.x - (this.curPoint.x - this.center.x),
-            y: this.center.y - (this.curPoint.y - this.center.y),
+        const oldAngle = container.angle;
+        function onDragEnd() {
+            dragging = false;
         }
-    }).on('pointerup', function(event)  {
-        this.dragging = false;
-    })
-        .on('pointerupoutside', function(event)  {
-            this.dragging = false;
-        } )
-        .on('pointermove', function(event)  {
-            if (this.dragging) {
-                const curPosition = {
-                    x: event.data.global.x,
-                    y: event.data.global.y,
+        this.on('pointerup', onDragEnd)
+            .on('pointerupoutside', onDragEnd )
+            .on('pointermove', function(event)  {
+                if (dragging) {
+                    const newPoint = {
+                        x: event.data.global.x,
+                        y: event.data.global.y
+                    }
+
+                    container.angle = oldAngle + calculateRotatedAngle(oldPoint, newPoint, {
+                        x: container.x,
+                        y: container.y
+                    });
+
+                    const {
+                        newLTPoint,
+                        newRTPoint,
+                        newLBPoint,
+                        newRBPoint,
+                        newTPoint,
+                        newBPoint,
+                        newLPoint,
+                        newRPoint,
+                        newUBPoint
+                    } = calculateSurroundPoints({
+                        x: container.x,
+                        y: container.y
+                    }, container);
+                    lt.update(newLTPoint)
+                    rt.update(newRTPoint)
+                    lb.update(newLBPoint)
+                    rb.update(newRBPoint)
+                    t.update(newTPoint)
+                    b.update(newBPoint)
+                    l.update(newLPoint)
+                    r.update(newRPoint)
+                    border.update([newLTPoint, newRTPoint, newRBPoint, newLBPoint, newLTPoint])
+                    rotation.update(newUBPoint)
                 }
-                const {
-                    newTopLeftPoint,
-                    newTopRightPoint,
-                    newBottomLeftPoint,
-                    newBottomRightPoint,
-                }  = calculateComponentPositionAndSize('lt', container, curPosition,{
-                    center: this.center,
-                    curPoint: this.curPoint,
-                    symmetricPoint: this.symmetricPoint,
-                })
-                lt.update(newTopLeftPoint)
-                rt.update(newTopRightPoint)
-                lb.update(newBottomLeftPoint)
-                rb.update(newBottomRightPoint)
+            })
+    })
+
+    selection.addChild(border)
+    selection.addChild(rotation)
+    const lt = new Dot(newLTPoint);
+    lt.name = 'lt';
+    const rt = new Dot(newRTPoint);
+    rt.name = 'rt';
+    const lb = new Dot(newLBPoint);
+    lb.name = 'lb';
+    const rb = new Dot(newRBPoint);
+    rb.name = 'rb';
+    const t = new Dot(newTPoint);
+    t.name = 't';
+
+    const b = new Dot(newBPoint);
+    b.name = 'b';
+    const l = new Dot(newLPoint);
+    l.name = 'l';
+    const r = new Dot(newRPoint);
+    r.name = 'r';
+
+    [lt, rt, lb, rb, t, b, l, r].forEach(_ => {
+        _.on('pointerover', function (event) {
+            data.curComponent = container;
+            data.cursors = getCursor();
+            this.cursor = data.cursors[_.name]
+        }).on('pointerdown', function(event) {
+            event.stopPropagation();
+            let dragging = true;
+            // 组件宽高比
+            const proportion = container.proportion;
+
+            // 是否需要等比例缩放
+            const needLockProportion = container.needLockProportion;
+            // 组件中心点
+            const  center = {
+                x: container.x,
+                y: container.y
             }
+            // 当前点击坐标
+            const curPoint = {
+                x: event.data.global.x,
+                y: event.data.global.y
+            }
+            // 获取对称点的坐标
+            const symmetricPoint = {
+                x: center.x - (curPoint.x - center.x),
+                y: center.y - (curPoint.y - center.y),
+            }
+
+            this.on('pointerup', function(event)  {
+                dragging = false;
+            })
+                .on('pointerupoutside', function(event)  {
+                    dragging = false;
+                } )
+                .on('pointermove', function(event)  {
+                    if (dragging) {
+                        const curPosition = {
+                            x: event.data.global.x,
+                            y: event.data.global.y,
+                        }
+                        const {
+                            newLTPoint,
+                            newRTPoint,
+                            newLBPoint,
+                            newRBPoint,
+                            newTPoint,
+                            newBPoint,
+                            newLPoint,
+                            newRPoint,
+                            newUBPoint
+                        }  = calculateComponentPositionAndSize(_.name, container, curPosition,proportion, needLockProportion, {
+                            center: center,
+                            curPoint: curPoint,
+                            symmetricPoint: symmetricPoint,
+                        })
+                        lt.update(newLTPoint)
+                        rt.update(newRTPoint)
+                        lb.update(newLBPoint)
+                        rb.update(newRBPoint)
+                        t.update(newTPoint)
+                        b.update(newBPoint)
+                        l.update(newLPoint)
+                        r.update(newRPoint)
+                        border.update([newLTPoint, newRTPoint, newRBPoint, newLBPoint, newLTPoint])
+                        rotation.update(newUBPoint)
+                    }
+                })
         })
-    dots.addChild(lt)
+    })
+    selection.addChild(lt)
 
-    dots.addChild(rt)
+    selection.addChild(rt)
 
-    dots.addChild(lb)
+    selection.addChild(lb)
 
-    dots.addChild(rb)
+    selection.addChild(rb)
+
+    selection.addChild(t)
+
+    selection.addChild(b)
+
+    selection.addChild(l)
+
+    selection.addChild(r)
 
     app.stage.addChild(
-        dots
+        selection
     )
+
+    container
+        .on('pointerdown', function (event) {
+            const diff = { x: event.data.global.x - this.x, y: event.data.global.y - this.y }
+            const data = event.data;
+            let dragging = true;
+            function onDragEnd() {
+                dragging = false;
+            }
+            this.on('pointerup', onDragEnd)
+                .on('pointerupoutside', onDragEnd)
+                .on('pointermove', function (event) {
+                    if (dragging) {
+                        const newPosition = data.getLocalPosition(container.parent);
+                        const newCenterPoint = {x:newPosition.x - diff.x, y: newPosition.y - diff.y}
+                        const {
+                            newLTPoint,
+                            newRTPoint,
+                            newLBPoint,
+                            newRBPoint,
+                            newTPoint,
+                            newBPoint,
+                            newLPoint,
+                            newRPoint,
+                            newUBPoint
+                        } = calculateSurroundPoints(newCenterPoint, container);
+                        lt.update(newLTPoint)
+                        rt.update(newRTPoint)
+                        lb.update(newLBPoint)
+                        rb.update(newRBPoint)
+                        t.update(newTPoint)
+                        b.update(newBPoint)
+                        l.update(newLPoint)
+                        r.update(newRPoint)
+                        border.update([newLTPoint, newRTPoint, newRBPoint, newLBPoint, newLTPoint])
+                        rotation.update(newUBPoint)
+                    }
+                })
+        })
 
 }
 export default function App(parent: HTMLElement, WORLD_WIDTH: number, WORLD_HEIGHT: number) {
@@ -513,6 +420,7 @@ export default function App(parent: HTMLElement, WORLD_WIDTH: number, WORLD_HEIG
         y: 100,
         angle: 60,
         zIndex: 20,
+        needLockProportion: true
     }
     const params4 = {
         url: "assets/mask.png",
@@ -550,9 +458,9 @@ export default function App(parent: HTMLElement, WORLD_WIDTH: number, WORLD_HEIG
         angle: 315,
         zIndex: 20,
     }
-    // setup(params);
+    setup(params);
     // setup(params1);
-    setup(params2);
+    // setup(params2);
     setup(params3);
     // setup(params4);
     // setup(params5);

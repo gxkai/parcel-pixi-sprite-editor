@@ -10,6 +10,7 @@ class Dot extends PIXI.Graphics{
 
     public update(point) {
         this.clear()
+        this.interactive = true;
         this.beginFill(0xffffff)
         this.drawCircle(point.x, point.y, 10);
         this.endFill()
