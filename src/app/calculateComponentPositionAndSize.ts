@@ -18,6 +18,17 @@ function calculateLeftTop(container, curPosition, pointInfo) {
     let newBottomRightPoint = calculateRotatedPointCoordinate(symmetricPoint, newCenterPoint, -container.angle)
     let newWidth = newBottomRightPoint.x - newTopLeftPoint.x
     let newHeight = newBottomRightPoint.y - newTopLeftPoint.y
+
+    let newTopRightPoint = {
+        x: newTopLeftPoint.x + newWidth,
+        y: newTopLeftPoint.y
+    }
+
+    let newBottomLeftPoint = {
+        x: newTopLeftPoint.x,
+        y: newTopLeftPoint.y + newHeight
+    }
+    // let newBottomLeftPoint = calculateRotatedPointCoordinate({x: curPosition.x, y: curPosition.y + container.height }, newCenterPoint, -container.angle)
     // if (needLockProportion) {
     //     if (newWidth / newHeight > proportion) {
     //         newTopLeftPoint.x += Math.abs(newWidth - newHeight * proportion)
@@ -39,11 +50,32 @@ function calculateLeftTop(container, curPosition, pointInfo) {
     //     newHeight = newBottomRightPoint.y - newTopLeftPoint.y
     // }
 
+    // if (newWidth > 0 && newHeight > 0) {
+    //     container.width = Math.round(newWidth)
+    //     container.height = Math.round(newHeight)
+    //     container.x = Math.round(newTopLeftPoint.x) + container.width / 2
+    //     container.y = Math.round(newTopLeftPoint.y) + container.height / 2
+    // }
     if (newWidth > 0 && newHeight > 0) {
-        container.width = Math.round(newWidth)
-        container.height = Math.round(newHeight)
-        container.x = Math.round(newTopLeftPoint.x) + container.width / 2
-        container.y = Math.round(newTopLeftPoint.y) + container.width / 2
+        container.width =newWidth
+        container.height =newHeight
+        container.x = newTopLeftPoint.x + container.width / 2
+        container.y = newTopLeftPoint.y + container.height / 2
+    }
+
+
+
+    // return {
+    //     newTopLeftPoint: calculateRotatedPointCoordinate(newTopLeftPoint, newCenterPoint, container.angle),
+    //     newTopRightPoint: calculateRotatedPointCoordinate(newTopRightPoint, newCenterPoint, container.angle),
+    //     newBottomLeftPoint: calculateRotatedPointCoordinate(newBottomLeftPoint, newCenterPoint, container.angle),
+    //     newBottomRightPoint: calculateRotatedPointCoordinate(newBottomRightPoint, newCenterPoint, container.angle),
+    // }
+    return {
+        newTopLeftPoint: calculateRotatedPointCoordinate(newTopLeftPoint, newCenterPoint, container.angle),
+        newTopRightPoint: calculateRotatedPointCoordinate(newTopRightPoint, newCenterPoint, container.angle),
+        newBottomLeftPoint: calculateRotatedPointCoordinate(newBottomLeftPoint, newCenterPoint, container.angle),
+        newBottomRightPoint: calculateRotatedPointCoordinate(newBottomRightPoint, newCenterPoint, container.angle),
     }
 }
 
@@ -266,5 +298,5 @@ function calculateLeftTop(container, curPosition, pointInfo) {
 // }
 
 export default function calculateComponentPositionAndSize(name, container, curPosition, pointInfo) {
-    funcs[name](container, curPosition, pointInfo)
+    return  funcs[name](container, curPosition, pointInfo)
 }

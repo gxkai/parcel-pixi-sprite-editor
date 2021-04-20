@@ -1,6 +1,7 @@
 import * as PIXI from 'pixi.js-legacy';
 import calculateComponentPositionAndSize from "./calculateComponentPositionAndSize";
-import { mod360 } from './translate';
+import {calculateRotatedPointCoordinate, mod360} from './translate';
+import Dot from "./dot";
 (window as any).PIXI = PIXI;
 
 let app: PIXI.Application;
@@ -150,17 +151,17 @@ function drawDot(x, y) {
 // 绘制dots
 function drawDots(container: PIXI.Container, x, y, width, height) {
     const dots = new PIXI.Container();
-    const nw = drawDot(x, y);
-    const ne = drawDot(x+ width, y);
-    const sw = drawDot(x, y + height);
-    const se = drawDot(x+width, y + height);
-    dots.addChild(nw)
-    dots.addChild(ne)
-    dots.addChild(sw)
-    dots.addChild(se)
+    const lt = drawDot(x, y);
+    const rt = drawDot(x+ width, y);
+    const lb = drawDot(x, y + height);
+    const rb = drawDot(x+width, y + height);
+    dots.addChild(lt)
+    dots.addChild(rt)
+    dots.addChild(lb)
+    dots.addChild(rb)
 
-    nw.interactive = true;
-    nw.on('pointerover', function (event) {
+    lt.interactive = true;
+    lt.on('pointerover', function (event) {
         data.curComponent = container;
         data.cursors = getCursor();
         this.cursor = data.cursors['lt']
@@ -216,90 +217,90 @@ function drawDots(container: PIXI.Container, x, y, width, height) {
             }
         })
 
-    ne.cursor = "ne-resize"
-    ne.interactive = true;
-    ne.on('pointerdown', function(event) {
-        event.stopPropagation();
-        this.oldPosition = event.data.getLocalPosition(this.parent);
-        this.containerW = container.width
-        this.containerH = container.height
-        this.containerX = container.x
-        this.containerY = container.y
-        this.dragging = true;
-    }).on('pointerup', function(event)  {
-        this.dragging = false;
-    })
-        .on('pointerupoutside', function(event)  {
-            this.dragging = false;
-        } )
-        .on('pointermove', function(event)  {
-            if (this.dragging) {
-                const newPosition = event.data.getLocalPosition(this.parent);
-                const diffX = newPosition.x - this.oldPosition.x;
-                const diffY = newPosition.y - this.oldPosition.y;
-                container.width = this.containerW + diffX;
-                container.height = this.containerH - diffY;
-                container.x = this.containerX + diffX/2;
-                container.y = this.containerY + diffY/2;
-            }
-        })
-
-
-    sw.cursor = "sw-resize"
-    sw.interactive = true;
-    sw.on('pointerdown', function(event) {
-        event.stopPropagation();
-        this.oldPosition = event.data.getLocalPosition(this.parent);
-        this.containerW = container.width
-        this.containerH = container.height
-        this.containerX = container.x
-        this.containerY = container.y
-        this.dragging = true;
-    }).on('pointerup', function(event)  {
-        this.dragging = false;
-    })
-        .on('pointerupoutside', function(event)  {
-            this.dragging = false;
-        } )
-        .on('pointermove', function(event)  {
-            if (this.dragging) {
-                const newPosition = event.data.getLocalPosition(this.parent);
-                const diffX = newPosition.x - this.oldPosition.x;
-                const diffY = newPosition.y - this.oldPosition.y;
-                container.width = this.containerW - diffX;
-                container.height = this.containerH + diffY;
-                container.x = this.containerX + diffX/2;
-                container.y = this.containerY + diffY/2;
-            }
-        })
-
-    se.cursor = "se-resize"
-    se.interactive = true;
-    se.on('pointerdown', function(event) {
-        event.stopPropagation();
-        this.oldPosition = event.data.getLocalPosition(this.parent);
-        this.containerW = container.width
-        this.containerH = container.height
-        this.containerX = container.x
-        this.containerY = container.y
-        this.dragging = true;
-    }).on('pointerup', function(event)  {
-        this.dragging = false;
-    })
-        .on('pointerupoutside', function(event)  {
-            this.dragging = false;
-        } )
-        .on('pointermove', function(event)  {
-            if (this.dragging) {
-                const newPosition = event.data.getLocalPosition(this.parent);
-                const diffX = newPosition.x - this.oldPosition.x;
-                const diffY = newPosition.y - this.oldPosition.y;
-                container.width = this.containerW + diffX;
-                container.height = this.containerH + diffY;
-                container.x = this.containerX + diffX/2;
-                container.y = this.containerY + diffY/2;
-            }
-        })
+    // rt.cursor = "ne-resize"
+    // rt.interactive = true;
+    // rt.on('pointerdown', function(event) {
+    //     event.stopPropagation();
+    //     this.oldPosition = event.data.getLocalPosition(this.parent);
+    //     this.containerW = container.width
+    //     this.containerH = container.height
+    //     this.containerX = container.x
+    //     this.containerY = container.y
+    //     this.dragging = true;
+    // }).on('pointerup', function(event)  {
+    //     this.dragging = false;
+    // })
+    //     .on('pointerupoutside', function(event)  {
+    //         this.dragging = false;
+    //     } )
+    //     .on('pointermove', function(event)  {
+    //         if (this.dragging) {
+    //             const newPosition = event.data.getLocalPosition(this.parent);
+    //             const diffX = newPosition.x - this.oldPosition.x;
+    //             const diffY = newPosition.y - this.oldPosition.y;
+    //             container.width = this.containerW + diffX;
+    //             container.height = this.containerH - diffY;
+    //             container.x = this.containerX + diffX/2;
+    //             container.y = this.containerY + diffY/2;
+    //         }
+    //     })
+    //
+    //
+    // lb.cursor = "sw-resize"
+    // lb.interactive = true;
+    // lb.on('pointerdown', function(event) {
+    //     event.stopPropagation();
+    //     this.oldPosition = event.data.getLocalPosition(this.parent);
+    //     this.containerW = container.width
+    //     this.containerH = container.height
+    //     this.containerX = container.x
+    //     this.containerY = container.y
+    //     this.dragging = true;
+    // }).on('pointerup', function(event)  {
+    //     this.dragging = false;
+    // })
+    //     .on('pointerupoutside', function(event)  {
+    //         this.dragging = false;
+    //     } )
+    //     .on('pointermove', function(event)  {
+    //         if (this.dragging) {
+    //             const newPosition = event.data.getLocalPosition(this.parent);
+    //             const diffX = newPosition.x - this.oldPosition.x;
+    //             const diffY = newPosition.y - this.oldPosition.y;
+    //             container.width = this.containerW - diffX;
+    //             container.height = this.containerH + diffY;
+    //             container.x = this.containerX + diffX/2;
+    //             container.y = this.containerY + diffY/2;
+    //         }
+    //     })
+    //
+    // rb.cursor = "se-resize"
+    // rb.interactive = true;
+    // rb.on('pointerdown', function(event) {
+    //     event.stopPropagation();
+    //     this.oldPosition = event.data.getLocalPosition(this.parent);
+    //     this.containerW = container.width
+    //     this.containerH = container.height
+    //     this.containerX = container.x
+    //     this.containerY = container.y
+    //     this.dragging = true;
+    // }).on('pointerup', function(event)  {
+    //     this.dragging = false;
+    // })
+    //     .on('pointerupoutside', function(event)  {
+    //         this.dragging = false;
+    //     } )
+    //     .on('pointermove', function(event)  {
+    //         if (this.dragging) {
+    //             const newPosition = event.data.getLocalPosition(this.parent);
+    //             const diffX = newPosition.x - this.oldPosition.x;
+    //             const diffY = newPosition.y - this.oldPosition.y;
+    //             container.width = this.containerW + diffX;
+    //             container.height = this.containerH + diffY;
+    //             container.x = this.containerX + diffX/2;
+    //             container.y = this.containerY + diffY/2;
+    //         }
+    //     })
 
     return dots;
 }
@@ -334,36 +335,141 @@ function setup(params){
     const object = PIXI.Sprite.from(url);
     object.width = w;
     object.height = h;
-    const container = new PIXI.Container();
-    container.interactive = true;
-    container.buttonMode = true;
-    container.zIndex = zIndex;
-    const rect = drawRect(object.getGlobalPosition().x, object.getGlobalPosition().y , object.width , object.height, 1);
+    //=============
+    // object.x = x + object.width / 2;
+    // object.y = y + object.height / 2;
+    object.x = x  + object.width / 2;
+    object.y = y + object.height / 2;
+    object.anchor.set(0.5)
+
+    // object.pivot.x = object.width / 2;
+    // object.pivot.y = object.height / 2;
+    object.interactive = true;
+    object.buttonMode = true;
+    object.zIndex = zIndex;
+    object.angle = angle;
+    app.stage.addChild(object);
+
+    const container = object;
+    //=============
+
+
+    // const container = new PIXI.Container();
+    // container.interactive = true;
+    // container.buttonMode = true;
+    // container.zIndex = zIndex;
+    const rect = drawRect(object.getGlobalPosition().x, object.getGlobalPosition().y, object.width , object.height, 1);
     rect.interactive = true;
     rect.buttonMode = true;
     rect.visible = true;
 
     rects.push(rect);
 
-    const dots = drawDots(container ,object.getGlobalPosition().x, object.getGlobalPosition().y , object.width , object.height);
+    // const dots = drawDots(container ,object.getGlobalPosition().x, object.getGlobalPosition().y , object.width , object.height);
 
-    container.addChild(rect);
-    container.addChild(object);
-    container.addChild(dots)
 
-    container.x = x + container.width / 2;
-    container.y = y + container.height / 2;
+    // container.addChild(rect);
+    // container.addChild(object);
+    // container.addChild(dots)
+    //
+    // container.x = x + container.width / 2;
+    // container.y = y + container.height / 2;
+    //
+    // container.pivot.x = container.width / 2;
+    // container.pivot.y = container.height / 2;
+    // container.angle = angle;
+    // app.stage.addChild(container);
 
-    container.pivot.x = container.width / 2;
-    container.pivot.y = container.height / 2;
-    container.angle = angle;
-    container
-        .on('pointerdown', onObjectDragStart)
-        .on('pointerup', onDragEnd)
-        .on('pointerupoutside', onDragEnd)
-        .on('pointermove', onObjectDragMove)
+    // container
+    //     .on('pointerdown', onObjectDragStart)
+    //     .on('pointerup', onDragEnd)
+    //     .on('pointerupoutside', onDragEnd)
+    //     .on('pointermove', onObjectDragMove)
 
-    app.stage.addChild(container);
+    const dots = new PIXI.Container();
+    const lt = new Dot(calculateRotatedPointCoordinate({x, y}
+    , {x: x + object.width/2, y: y + object.height/2}, angle
+    ));
+    const rt = new Dot(calculateRotatedPointCoordinate({
+        x: x + object.width,
+        y: y,
+    }, {x: x + object.width/2, y: y + object.height/2}, angle));
+    const lb = new Dot(calculateRotatedPointCoordinate({
+        x: x,
+        y: y + object.height,
+    }, {x: x + object.width/2, y: y + object.height/2}, angle));
+    const rb = new Dot(calculateRotatedPointCoordinate({
+        x: x + object.width,
+        y: y + object.height,
+    }, {x: x + object.width/2, y: y + object.height/2}, angle));
+    lt.interactive = true;
+    lt.on('pointerover', function (event) {
+        data.curComponent = container;
+        data.cursors = getCursor();
+        this.cursor = data.cursors['lt']
+    }).on('pointerdown', function(event) {
+        event.stopPropagation();
+        // this.oldPosition = event.data.getLocalPosition(this.parent);
+        // this.containerW = container.width
+        // this.containerH = container.height
+        // this.containerX = container.x
+        // this.containerY = container.y
+        this.dragging = true;
+        // 组件中心点
+        this.center = {
+            x: container.x,
+            y: container.y
+        }
+        // 当前点击坐标
+        this.curPoint = {
+            x: event.data.global.x,
+            y: event.data.global.y
+        }
+        // 获取对称点的坐标
+        this.symmetricPoint = {
+            x: this.center.x - (this.curPoint.x - this.center.x),
+            y: this.center.y - (this.curPoint.y - this.center.y),
+        }
+    }).on('pointerup', function(event)  {
+        this.dragging = false;
+    })
+        .on('pointerupoutside', function(event)  {
+            this.dragging = false;
+        } )
+        .on('pointermove', function(event)  {
+            if (this.dragging) {
+                const curPosition = {
+                    x: event.data.global.x,
+                    y: event.data.global.y,
+                }
+                const {
+                    newTopLeftPoint,
+                    newTopRightPoint,
+                    newBottomLeftPoint,
+                    newBottomRightPoint,
+                }  = calculateComponentPositionAndSize('lt', container, curPosition,{
+                    center: this.center,
+                    curPoint: this.curPoint,
+                    symmetricPoint: this.symmetricPoint,
+                })
+                lt.update(newTopLeftPoint)
+                rt.update(newTopRightPoint)
+                lb.update(newBottomLeftPoint)
+                rb.update(newBottomRightPoint)
+            }
+        })
+    dots.addChild(lt)
+
+    dots.addChild(rt)
+
+    dots.addChild(lb)
+
+    dots.addChild(rb)
+
+    app.stage.addChild(
+        dots
+    )
+
 }
 export default function App(parent: HTMLElement, WORLD_WIDTH: number, WORLD_HEIGHT: number) {
     app = new PIXI.Application({backgroundColor: 0x000000, antialias:true,forceCanvas: true, resolution: 2});
@@ -394,9 +500,9 @@ export default function App(parent: HTMLElement, WORLD_WIDTH: number, WORLD_HEIG
         url: "assets/mask.png",
         w: 200,
         h: 200,
-        x: 400,
-        y: 100,
-        angle: 45,
+        x: 0,
+        y: 0,
+        angle: 0,
         zIndex: 20,
     }
     const params3 = {
@@ -444,12 +550,12 @@ export default function App(parent: HTMLElement, WORLD_WIDTH: number, WORLD_HEIG
         angle: 315,
         zIndex: 20,
     }
-    setup(params);
-    setup(params1);
+    // setup(params);
+    // setup(params1);
     setup(params2);
     setup(params3);
-    setup(params4);
-    setup(params5);
-    setup(params6);
-    setup(params7);
+    // setup(params4);
+    // setup(params5);
+    // setup(params6);
+    // setup(params7);
 }
