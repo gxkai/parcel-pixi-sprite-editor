@@ -1,4 +1,4 @@
-import * as PIXI from 'pixi.js'
+import * as PIXI from 'pixi.js-legacy';
 class Rotation extends PIXI.Graphics{
     constructor(point: PIXI.IPointData, container) {
         super()

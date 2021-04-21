@@ -4,6 +4,10 @@ import {calculateRotatedAngle, calculateRotatedPointCoordinate, mod360} from './
 import Dot from "./dot";
 import Component from "./component";
 import Border from "./border";
+import Mask from "./mask";
+import Background from "./background";
+import Dots from "./dots";
+import Selection from "./selection";
 (window as any).PIXI = PIXI;
 
 let app: PIXI.Application;
@@ -126,13 +130,11 @@ function setup(params){
             y: y + object.height/2
         }, {x: x + object.width/2, y: y + object.height/2}, angle)
     ]
-    const selection = new PIXI.Container();
-    selections.push(selection);
     const border = new Border([newLTPoint, newRTPoint, newRBPoint, newLBPoint, newLTPoint])
     const rotation = new Dot(calculateRotatedPointCoordinate({
         x: x + object.width/2,
         y: y + object.height + 50
-    }, {x: x + object.width/2, y: y + object.height/2}, angle))
+    }, {x: x + object.width/2, y: y + object.height/2}, angle), 'rotation')
     rotation.on('pointerdown', function (event) {
         let dragging = true;
         const oldPoint = {
@@ -157,6 +159,13 @@ function setup(params){
                         y: container.y
                     });
 
+                    const result = calculateSurroundPoints({
+                        x: container.x,
+                        y: container.y
+                    }, container);
+                    if (
+                        !result
+                    ) return
                     const {
                         newLTPoint,
                         newRTPoint,
@@ -167,10 +176,9 @@ function setup(params){
                         newLPoint,
                         newRPoint,
                         newUBPoint
-                    } = calculateSurroundPoints({
-                        x: container.x,
-                        y: container.y
-                    }, container);
+                    } = result
+
+
                     lt.update(newLTPoint)
                     rt.update(newRTPoint)
                     lb.update(newLBPoint)
@@ -184,26 +192,15 @@ function setup(params){
                 }
             })
     })
+    const lt = new Dot(newLTPoint, 'lt');
+    const rt = new Dot(newRTPoint, 'rt');
+    const lb = new Dot(newLBPoint, 'lb');
+    const rb = new Dot(newRBPoint, 'rb');
+    const t = new Dot(newTPoint, 't');
 
-    selection.addChild(border)
-    selection.addChild(rotation)
-    const lt = new Dot(newLTPoint);
-    lt.name = 'lt';
-    const rt = new Dot(newRTPoint);
-    rt.name = 'rt';
-    const lb = new Dot(newLBPoint);
-    lb.name = 'lb';
-    const rb = new Dot(newRBPoint);
-    rb.name = 'rb';
-    const t = new Dot(newTPoint);
-    t.name = 't';
-
-    const b = new Dot(newBPoint);
-    b.name = 'b';
-    const l = new Dot(newLPoint);
-    l.name = 'l';
-    const r = new Dot(newRPoint);
-    r.name = 'r';
+    const b = new Dot(newBPoint, 'b');
+    const l = new Dot(newLPoint, 'l');
+    const r = new Dot(newRPoint, 'r');
 
     [lt, rt, lb, rb, t, b, l, r].forEach(_ => {
         _.on('pointerover', function (event) {
@@ -233,19 +230,26 @@ function setup(params){
                 x: center.x - (curPoint.x - center.x),
                 y: center.y - (curPoint.y - center.y),
             }
-
-            this.on('pointerup', function(event)  {
+            function onDragEnd() {
                 dragging = false;
-            })
-                .on('pointerupoutside', function(event)  {
-                    dragging = false;
-                } )
+                this.cursor = 'auto'
+            }
+            this.on('pointerup', onDragEnd)
+                .on('pointerupoutside', onDragEnd)
                 .on('pointermove', function(event)  {
                     if (dragging) {
                         const curPosition = {
                             x: event.data.global.x,
                             y: event.data.global.y,
                         }
+                        const result  = calculateComponentPositionAndSize(_.name, container, curPosition,proportion, needLockProportion, {
+                            center: center,
+                            curPoint: curPoint,
+                            symmetricPoint: symmetricPoint,
+                        })
+                        if (
+                            !result
+                        ) return
                         const {
                             newLTPoint,
                             newRTPoint,
@@ -256,11 +260,7 @@ function setup(params){
                             newLPoint,
                             newRPoint,
                             newUBPoint
-                        }  = calculateComponentPositionAndSize(_.name, container, curPosition,proportion, needLockProportion, {
-                            center: center,
-                            curPoint: curPoint,
-                            symmetricPoint: symmetricPoint,
-                        })
+                        } = result
                         lt.update(newLTPoint)
                         rt.update(newRTPoint)
                         lb.update(newLBPoint)
@@ -275,21 +275,10 @@ function setup(params){
                 })
         })
     })
-    selection.addChild(lt)
 
-    selection.addChild(rt)
-
-    selection.addChild(lb)
-
-    selection.addChild(rb)
-
-    selection.addChild(t)
-
-    selection.addChild(b)
-
-    selection.addChild(l)
-
-    selection.addChild(r)
+    const dots = new Dots([lt, rt, lb, rb, t, b, l, r, rotation]);
+    const selection = new Selection([border, dots]);
+    selections.push(selection);
 
     app.stage.addChild(
         selection
@@ -310,6 +299,10 @@ function setup(params){
                     if (dragging) {
                         const newPosition = data.getLocalPosition(container.parent);
                         const newCenterPoint = {x:newPosition.x - diff.x, y: newPosition.y - diff.y}
+                        const result = calculateSurroundPoints(newCenterPoint, container);
+                        if (
+                            !result
+                        ) return
                         const {
                             newLTPoint,
                             newRTPoint,
@@ -320,7 +313,7 @@ function setup(params){
                             newLPoint,
                             newRPoint,
                             newUBPoint
-                        } = calculateSurroundPoints(newCenterPoint, container);
+                        } = result
                         lt.update(newLTPoint)
                         rt.update(newRTPoint)
                         lb.update(newLBPoint)
@@ -337,22 +330,41 @@ function setup(params){
 
 }
 export default function App(parent: HTMLElement, WORLD_WIDTH: number, WORLD_HEIGHT: number) {
-    app = new PIXI.Application({backgroundColor: 0x000000, antialias:true,forceCanvas: true, resolution: 2});
+    app = new PIXI.Application({backgroundColor: 0x000000, antialias:true,forceCanvas: false, resolution: 2});
     app.renderer.autoDensity = true;
     app.renderer.resize(WORLD_WIDTH, WORLD_HEIGHT)
     parent.replaceChild(app.view, parent.lastElementChild); // Hack for parcel HMR
     PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
 
-    let bg = new PIXI.Sprite(PIXI.Texture.WHITE);
-    bg.width = app.screen.width;
-    bg.height = app.screen.height;
-    bg.tint = 0x000000;
-    bg.interactive = true;
-    bg.on('click', function(){
-        console.log('hello');
+    let bg = new Background({
+        width: app.screen.width,
+        height: app.screen.height
+    })
+    const mask = new Mask([])
+    bg.on('pointerdown', function(event){
+        let dragging = true;
+        const startPoint = {
+            x: event.data.global.x,
+            y: event.data.global.y
+        }
         clearSelections();
+        function onDragEnd() {
+            dragging = false;
+            mask.update([])
+        }
+        this.on('pointermove', function (event) {
+            if (dragging) {
+                const endPoint = {
+                    x: event.data.global.x,
+                    y: event.data.global.y
+                }
+                mask.update([startPoint, {x: endPoint.x, y: startPoint.y}, endPoint, {x: startPoint.x, y: endPoint.y}, startPoint])
+            }
+        }).on('pointerup', onDragEnd)
+            .on('pointerupoutside', onDragEnd)
     });
     app.stage.addChild(bg);
+    app.stage.addChild(mask);
     // object
     const params = {
         url: "assets/mask.png",

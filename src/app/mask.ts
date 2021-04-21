@@ -1,8 +1,7 @@
 import * as PIXI from 'pixi.js-legacy';
-class Border extends PIXI.Graphics{
+class Mask extends PIXI.Graphics{
     constructor(points: PIXI.IPointData[]) {
         super();
-        this.name = 'border';
         this.update(points)
     }
     public update(points: PIXI.IPointData[]) {
@@ -18,4 +17,4 @@ class Border extends PIXI.Graphics{
         }
     }
 }
-export default Border;
+export default Mask

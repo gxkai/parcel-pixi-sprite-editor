@@ -1,11 +1,12 @@
-import * as PIXI from 'pixi.js'
+import * as PIXI from 'pixi.js-legacy';
 class Dot extends PIXI.Graphics{
-    constructor(point) {
+    constructor(point: PIXI.IPointData, name: string) {
         super();
+        this.name = name;
         this.update(point)
     }
 
-    public update(point) {
+    public update(point: PIXI.IPointData) {
         this.clear()
         this.interactive = true;
         this.beginFill(0xffffff)
