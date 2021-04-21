@@ -1,6 +1,7 @@
 import * as PIXI from 'pixi.js-legacy';
 import calculateComponentPositionAndSize, {calculateSurroundPoints} from "./calculateComponentPositionAndSize";
-import {calculateRotatedAngle, calculateRotatedPointCoordinate, mod360} from './translate';
+import {calculateRotatedAngle, calculateRotatedPointCoordinate,
+    judeReactangkesCollision, mod360} from './translate';
 import Dot from "./dot";
 import Component from "./component";
 import Border from "./border";
@@ -130,7 +131,7 @@ function setup(params){
             y: y + object.height/2
         }, {x: x + object.width/2, y: y + object.height/2}, angle)
     ]
-    const border = new Border([newLTPoint, newRTPoint, newRBPoint, newLBPoint, newLTPoint])
+    const border = new Border([newLTPoint, newRTPoint, newRBPoint, newLBPoint])
     const rotation = new Dot(calculateRotatedPointCoordinate({
         x: x + object.width/2,
         y: y + object.height + 50
@@ -290,6 +291,8 @@ function setup(params){
             const data = event.data;
             let dragging = true;
             selection.visible = true;
+            selection.border.visible = true;
+            selection.dots.visible = true;
             function onDragEnd() {
                 dragging = false;
             }
@@ -358,13 +361,62 @@ export default function App(parent: HTMLElement, WORLD_WIDTH: number, WORLD_HEIG
                     x: event.data.global.x,
                     y: event.data.global.y
                 }
-                mask.update([startPoint, {x: endPoint.x, y: startPoint.y}, endPoint, {x: startPoint.x, y: endPoint.y}, startPoint])
+                // 顺时针取点
+                let xMin, xMax, yMin, yMax;
+                if (startPoint.x > endPoint.x) {
+                    xMin = endPoint.x;
+                    xMax = startPoint.x;
+                } else {
+                    xMin = startPoint.x;
+                    xMax = endPoint.x;
+                }
+                if (startPoint.y > endPoint.y) {
+                    yMin = endPoint.y;
+                    yMax = startPoint.y;
+                } else {
+                    yMin = startPoint.y;
+                    yMax = endPoint.y;
+                }
+                const maskPoints: PIXI.IPointData[] = [{x: xMin, y: yMin}, {x: xMax, y: yMin}, {x: xMax, y: yMax}, {x: xMin, y: yMax}]
+                mask.update(maskPoints);
+                const newSelections = selections.filter(selection => {
+                    const isCollision = judeReactangkesCollision(maskPoints, selection.border.points);
+                    selection.border.visible = false;
+                    selection.dots.visible = false;
+                    return isCollision;
+                })
+                if (newSelections.length === 0) {
+                    return;
+                } else if (newSelections.length === 1) {
+                    const selection = newSelections[0];
+                    const border = selection.children.find(q => q.name === 'border') as Border;
+                    const dots = selection.children.find(q => q.name === 'dots') as Border;
+                    selection.visible = true;
+                    border.visible = true;
+                    dots.visible = true;
+                } else {
+                    newSelections.forEach(selection => {
+                        selection.visible = true;
+                        selection.border.visible = true;
+                        selection.dots.visible = false;
+                    })
+                    // const pointListArr = newSelections.map(selection => selection.border.points);
+                    // const xMin =  Math.min(...pointXList);
+                    // const xMax =  Math.max(...pointXList);
+                    // const yMin =  Math.min(...pointYList);
+                    // const yMax =  Math.max(...pointYList);
+                    // console.log(xMin,xMax,yMin,yMax)
+                    // const component = new Component({
+                    //     x: xMin, y: yMin, angle: 0, zIndex: 20, w: xMax - xMin, h: yMax - yMin, typeName: 'group', needLockProportion: true
+                    // })
+                    // app.stage.addChild(component)
+                }
+                app.stage.addChild(mask);
             }
         }).on('pointerup', onDragEnd)
             .on('pointerupoutside', onDragEnd)
     });
     app.stage.addChild(bg);
-    app.stage.addChild(mask);
     // object
     const params = {
         url: "assets/mask.png",

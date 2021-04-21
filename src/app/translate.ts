@@ -56,3 +56,83 @@ export function cos(rotate) {
 export function mod360(deg) {
     return (deg + 360) % 360
 }
+export function calculateLength(points: [PIXI.IPointData, PIXI.IPointData]) {
+    const p0 = points[0];
+    const p1 = points[1];
+    return Math.pow(Math.pow(p0.x - p1.x, 2) + Math.pow(p0.y - p1.y,2), 0.5)
+}
+
+//=================== 碰撞检测 https://github.com/francecil/leetcode/issues/1
+// 判断线段AB 和线段CD 是否相交
+function judgeSegmentsIntersect (A: PIXI.IPointData, B: PIXI.IPointData, C: PIXI.IPointData, D: PIXI.IPointData) {
+    //快速排斥, 不考虑相切情况 判断时要算上等于
+    if (Math.max(C.x, D.x) <= Math.min(A.x, B.x) || Math.max(C.y, D.y) <= Math.min(A.y, B.y) ||
+        Math.max(A.x, B.x) <= Math.min(C.x, D.x) || Math.max(A.y, B.y) <= Math.min(C.y, D.y)) {
+        return false
+    }
+    // 向量叉乘
+    const crossMul = (v1, v2) => {
+        return v1.x * v2.y - v1.y * v2.x
+    }
+    const vector = (start, end) => {
+        return {
+            x: end.x - start.x,
+            y: end.y - start.y
+        }
+    }
+    let AC = vector(A, C)
+    let AD = vector(A, D)
+    let BC = vector(B, C)
+    let BD = vector(B, D)
+    let CA = vector(C, A)
+    let DA = vector(D, A)
+    let CB = vector(C, B)
+    let DB = vector(D, B)
+    return (crossMul(AC, AD) * crossMul(BC, BD) <= 0)
+        && (crossMul(CA, CB) * crossMul(DA, DB) <= 0)
+}
+
+
+/**
+ * @description 判断矩形相交
+ * @param {PIXI.IPointData[]} rect1 拖动光标形成的矩形
+ * @param {PIXI.IPointData[]} rect2 已有矩形
+ */
+function judgeRectanglesIntersect (rect1:PIXI.IPointData[], rect2:PIXI.IPointData[]) {
+    for (let i = 0; i < rect1.length; i++) {
+        let A = rect1[i]
+        let B = i === rect1.length - 1 ? rect1[0] : rect1[i + 1]
+        for (let j = 0; j < rect2.length; j++) {
+            let C = rect2[j]
+            let D = j === rect2.length - 1 ? rect2[0] : rect2[j + 1]
+            if (judgeSegmentsIntersect(A, B, C, D)) {
+                return true
+            }
+        }
+    }
+    return false
+}
+
+/**
+ * @description 已知两矩形不相交 判断矩形是否属于包含关系
+ * @param {PIXI.IPointData[]} rect1 拖动光标形成的矩形
+ * @param {PIXI.IPointData[]} rect2 已有矩形
+ */
+function judgeRectanglesContain (rect1:PIXI.IPointData[], rect2:PIXI.IPointData[]) {
+
+    // 判断点P是否在水平坐标系的矩形box中
+    const isInside = (p, rect1) => {
+        return  p.x >= rect1[0].x && p.x <= rect1[2].x && p.y >= rect1[0].y && p.y <= rect1[2].y
+    }
+    return rect2.every(p => isInside(p, rect1));
+}
+
+/**
+ * @description 判定碰撞
+ * @param {PIXI.IPointData[]} rect1 拖动光标形成的矩形
+ * @param {PIXI.IPointData[]} rect2 已有矩形
+ */
+export function judeReactangkesCollision(rect1:PIXI.IPointData[], rect2:PIXI.IPointData[]) {
+    return judgeRectanglesIntersect(rect1, rect2) || judgeRectanglesContain(rect1, rect2);
+}
+//========================

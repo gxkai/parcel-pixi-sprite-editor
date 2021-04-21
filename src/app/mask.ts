@@ -14,6 +14,10 @@ class Mask extends PIXI.Graphics{
             } else {
                 this.lineTo(x, y)
             }
+            if (i === points.length - 1) {
+                const {x, y} = points[0];
+                this.lineTo(x, y)
+            }
         }
     }
 }
