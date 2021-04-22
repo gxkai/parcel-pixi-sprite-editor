@@ -10,7 +10,7 @@ import Background from "./background";
 import Dots from "./dots";
 import Selection from "./selection";
 (window as any).PIXI = PIXI;
-
+// todo compose decompose
 let app: PIXI.Application;
 //选中元素
 let selectedComponents: Component[] = [];
@@ -270,9 +270,6 @@ export default function App(parent: HTMLElement, WORLD_WIDTH: number, WORLD_HEIG
         height: app.screen.height
     })
     const mask = new Mask([])
-    const {object: group, selection: groupSelection} = setup({
-        x: 0, y: 0, angle: 0, zIndex: 20, w: 0, h: 0, typeName: 'group', needLockProportion: false
-    })
     bg.on('pointerdown', function(event){
         let dragging = true;
         const startPoint = {
@@ -314,7 +311,6 @@ export default function App(parent: HTMLElement, WORLD_WIDTH: number, WORLD_HEIG
                     selection.dots.visible = false;
                     return isCollision;
                 })
-                group.selection.visible = false;
                 if (newSelectedComponents.length === 0) {
                     return;
                 } else if (newSelectedComponents.length === 1) {
@@ -324,9 +320,7 @@ export default function App(parent: HTMLElement, WORLD_WIDTH: number, WORLD_HEIG
                     selection.dots.visible = true;
                     app.stage.addChild(selection)
                 } else {
-                    // group.visible = true;
                     newSelectedComponents.forEach(_ => {
-                        _.pid = group.uuid;
                         const {selection} = _;
                         selection.visible = true;
                         selection.border.visible = true;
@@ -342,14 +336,6 @@ export default function App(parent: HTMLElement, WORLD_WIDTH: number, WORLD_HEIG
                     const xMax =  Math.max(...pointXList);
                     const yMin =  Math.min(...pointYList);
                     const yMax =  Math.max(...pointYList);
-                    group.draw({
-                        x: xMin, y: yMin, angle: 0, zIndex: 20, w: xMax - xMin, h: yMax - yMin, typeName: 'group', needLockProportion: false
-                    })
-                    group.update();
-                    group.selection.visible = true;
-                    group.selection.dots.visible = true;
-                    app.stage.addChild(group);
-                    app.stage.addChild(groupSelection);
                 }
                 app.stage.addChild(mask);
             }
