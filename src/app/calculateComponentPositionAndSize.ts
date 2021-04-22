@@ -17,53 +17,65 @@ function calculateContainerPosition(newCenterPoint, container) {
 }
 // 计算周围点位置
 export function calculateSurroundPoints(newCenterPoint, container) {
-    calculateContainerPosition(newCenterPoint, container)
-    const newLTPoint = {
+    const LTPoint = {
         x: newCenterPoint.x - container.width/2,
         y: newCenterPoint.y - container.height/2,
     }
-    const newRTPoint = {
+    const RTPoint = {
         x: newCenterPoint.x + container.width/2,
         y: newCenterPoint.y - container.height/2
     }
-    const newLBPoint = {
+    const LBPoint = {
         x: newCenterPoint.x - container.width/2,
         y: newCenterPoint.y + container.height/2
     }
-    const newRBPoint = {
+    const RBPoint = {
         x: newCenterPoint.x + container.width/2,
         y: newCenterPoint.y + container.height/2
     }
-    const newTPoint = {
+    const TPoint = {
         x: newCenterPoint.x,
         y: newCenterPoint.y - container.height/2
     }
-    const newBPoint = {
+    const BPoint = {
         x: newCenterPoint.x,
         y: newCenterPoint.y + container.height/2
     }
-    const newLPoint = {
+    const LPoint = {
         x: newCenterPoint.x - container.width/2,
         y: newCenterPoint.y
     }
-    const newRPoint = {
+    const RPoint = {
         x: newCenterPoint.x + container.width/2,
         y: newCenterPoint.y
     }
-    return {
-        newLTPoint: calculateRotatedPointCoordinate(newLTPoint, newCenterPoint, container.angle),
-        newRTPoint: calculateRotatedPointCoordinate(newRTPoint, newCenterPoint, container.angle),
-        newLBPoint: calculateRotatedPointCoordinate(newLBPoint, newCenterPoint, container.angle),
-        newRBPoint: calculateRotatedPointCoordinate(newRBPoint, newCenterPoint, container.angle),
-        newTPoint: calculateRotatedPointCoordinate(newTPoint, newCenterPoint, container.angle),
-        newBPoint: calculateRotatedPointCoordinate(newBPoint, newCenterPoint, container.angle),
-        newLPoint: calculateRotatedPointCoordinate(newLPoint, newCenterPoint, container.angle),
-        newRPoint: calculateRotatedPointCoordinate(newRPoint, newCenterPoint, container.angle),
-        newUBPoint: calculateRotatedPointCoordinate({
-            x: newBPoint.x,
-            y: newBPoint.y + 50
-        }, newCenterPoint, container.angle),
-    }
+    const   newLTPoint= calculateRotatedPointCoordinate(LTPoint, newCenterPoint, container.angle);
+    const   newRTPoint= calculateRotatedPointCoordinate(RTPoint, newCenterPoint, container.angle);
+    const   newLBPoint= calculateRotatedPointCoordinate(LBPoint, newCenterPoint, container.angle);
+    const   newRBPoint= calculateRotatedPointCoordinate(RBPoint, newCenterPoint, container.angle);
+    const   newTPoint= calculateRotatedPointCoordinate(TPoint, newCenterPoint, container.angle);
+    const   newBPoint= calculateRotatedPointCoordinate(BPoint, newCenterPoint, container.angle);
+    const   newLPoint= calculateRotatedPointCoordinate(LPoint, newCenterPoint, container.angle);
+    const   newRPoint= calculateRotatedPointCoordinate(RPoint, newCenterPoint, container.angle);
+    const   newUBPoint= calculateRotatedPointCoordinate({
+        x: BPoint.x,
+        y: BPoint.y + 50
+    }, newCenterPoint, container.angle);
+    return [newLTPoint, newRTPoint, newLBPoint, newRBPoint, newTPoint, newBPoint, newLPoint, newRPoint, newUBPoint];
+    // return {
+    //     newLTPoint: calculateRotatedPointCoordinate(newLTPoint, newCenterPoint, container.angle),
+    //     newRTPoint: calculateRotatedPointCoordinate(newRTPoint, newCenterPoint, container.angle),
+    //     newLBPoint: calculateRotatedPointCoordinate(newLBPoint, newCenterPoint, container.angle),
+    //     newRBPoint: calculateRotatedPointCoordinate(newRBPoint, newCenterPoint, container.angle),
+    //     newTPoint: calculateRotatedPointCoordinate(newTPoint, newCenterPoint, container.angle),
+    //     newBPoint: calculateRotatedPointCoordinate(newBPoint, newCenterPoint, container.angle),
+    //     newLPoint: calculateRotatedPointCoordinate(newLPoint, newCenterPoint, container.angle),
+    //     newRPoint: calculateRotatedPointCoordinate(newRPoint, newCenterPoint, container.angle),
+    //     newUBPoint: calculateRotatedPointCoordinate({
+    //         x: newBPoint.x,
+    //         y: newBPoint.y + 50
+    //     }, newCenterPoint, container.angle),
+    // }
 }
 function calculateLeftTop(container, curPosition,proportion, needLockProportion, pointInfo) {
     const { symmetricPoint } = pointInfo
@@ -94,7 +106,9 @@ function calculateLeftTop(container, curPosition,proportion, needLockProportion,
     if (newWidth > 0 && newHeight > 0) {
         container.width =newWidth
         container.height =newHeight
-        return calculateSurroundPoints(newCenterPoint, container);
+        container.x = newCenterPoint.x;
+        container.y = newCenterPoint.y;
+        // return calculateSurroundPoints(newCenterPoint, container);
     }
 }
 
@@ -128,7 +142,9 @@ function calculateRightTop(container, curPosition, proportion, needLockProportio
     if (newWidth > 0 && newHeight > 0) {
         container.width = newWidth
         container.height =newHeight
-        return calculateSurroundPoints(newCenterPoint, container);
+        container.x = newCenterPoint.x;
+        container.y = newCenterPoint.y;
+        // return calculateSurroundPoints(newCenterPoint, container);
 
     }
 }
@@ -163,7 +179,9 @@ function calculateRightBottom(container, curPosition, proportion, needLockPropor
     if (newWidth > 0 && newHeight > 0) {
         container.width = newWidth
         container.height = newHeight
-        return calculateSurroundPoints(newCenterPoint, container);
+        container.x = newCenterPoint.x;
+        container.y = newCenterPoint.y;
+        // return calculateSurroundPoints(newCenterPoint, container);
     }
 }
 //
@@ -197,7 +215,9 @@ function calculateLeftBottom(container, curPosition, proportion, needLockProport
     if (newWidth > 0 && newHeight > 0) {
         container.width = newWidth
         container.height = newHeight
-        return calculateSurroundPoints(newCenterPoint, container);
+        container.x = newCenterPoint.x;
+        container.y = newCenterPoint.y;
+        // return calculateSurroundPoints(newCenterPoint, container);
     }
 }
 //
@@ -226,7 +246,9 @@ function calculateTop(container, curPosition, proportion, needLockProportion, po
 
         container.width = width
         container.height =newHeight
-        return calculateSurroundPoints(newCenterPoint, container)
+        container.x = newCenterPoint.x;
+        container.y = newCenterPoint.y;
+        // return calculateSurroundPoints(newCenterPoint, container)
     }
 }
 //
@@ -253,7 +275,9 @@ function calculateRight(container, curPosition, proportion, needLockProportion, 
 
         container.height = height
         container.width = newWidth
-        return calculateSurroundPoints(newCenterPoint, container)
+        container.x = newCenterPoint.x;
+        container.y = newCenterPoint.y;
+        // return calculateSurroundPoints(newCenterPoint, container)
     }
 }
 //
@@ -280,7 +304,9 @@ function calculateBottom(container, curPosition, proportion, needLockProportion,
 
         container.width = width
         container.height = newHeight
-        return calculateSurroundPoints(newCenterPoint, container)
+        container.x = newCenterPoint.x;
+        container.y = newCenterPoint.y;
+        // return calculateSurroundPoints(newCenterPoint, container)
     }
 }
 //
@@ -306,10 +332,12 @@ function calculateLeft(container, curPosition, proportion, needLockProportion, p
 
         container.height = height
         container.width = newWidth
-        return calculateSurroundPoints(newCenterPoint, container)
+        container.x = newCenterPoint.x;
+        container.y = newCenterPoint.y;
+        // return calculateSurroundPoints(newCenterPoint, container)
     }
 }
 
 export default function calculateComponentPositionAndSize(name, container, curPosition,proportion, needLockProportion, pointInfo) {
-    return  funcs[name](container, curPosition,proportion, needLockProportion, pointInfo)
+      funcs[name](container, curPosition,proportion, needLockProportion, pointInfo)
 }

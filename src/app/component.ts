@@ -1,16 +1,21 @@
 import * as PIXI from 'pixi.js-legacy';
 import UUID from 'uuidjs';
+import Selection from './selection'
+import {calculateSurroundPoints} from "./calculateComponentPositionAndSize";
 class Component extends PIXI.Sprite{
     public typeName: string;
     public needLockProportion: boolean;
     public uuid: string;
+    public pid: string;
+    public selection: Selection;
     constructor(params) {
-        super(PIXI.Texture.from(params.url));
+        super(params.url ? PIXI.Texture.from(params.url) : PIXI.Texture.EMPTY);
         this.name = 'component';
-        this.update(params)
+        this.uuid = params.uuid || UUID.generate();
+        this.draw(params)
     }
-    public update(params) {
-        const {x, y, angle, zIndex, w, h, typeName, needLockProportion, uuid} = params
+    public draw(params) {
+        const {x, y, angle, zIndex, w, h, typeName, needLockProportion} = params
         this.width = w;
         this.height = h;
         this.x = x  + this.width / 2;
@@ -22,10 +27,18 @@ class Component extends PIXI.Sprite{
         this.angle = angle;
         this.typeName = typeName || 'single'
         this.needLockProportion = !!needLockProportion;
-        this.uuid = uuid || UUID.genV4();
+    }
+    public update(points = this.points) {
+        this.selection.update(points)
     }
     public get proportion() {
         return this.width / this.height;
+    }
+    public get points() {
+        return  calculateSurroundPoints({
+            x: this.x,
+            y: this.y
+        }, this);
     }
 }
 export default Component

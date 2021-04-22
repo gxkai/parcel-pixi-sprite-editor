@@ -132,7 +132,7 @@ function judgeRectanglesContain (rect1:PIXI.IPointData[], rect2:PIXI.IPointData[
  * @param {PIXI.IPointData[]} rect1 拖动光标形成的矩形
  * @param {PIXI.IPointData[]} rect2 已有矩形
  */
-export function judeReactangkesCollision(rect1:PIXI.IPointData[], rect2:PIXI.IPointData[]) {
+export function judeRectanglesCollision(rect1:PIXI.IPointData[], rect2:PIXI.IPointData[]) {
     return judgeRectanglesIntersect(rect1, rect2) || judgeRectanglesContain(rect1, rect2);
 }
 //========================

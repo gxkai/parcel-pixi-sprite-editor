@@ -4,9 +4,9 @@ class Background extends PIXI.Sprite{
     constructor(params) {
         super(PIXI.Texture.WHITE);
         this.name = 'background';
-        this.update(params)
+        this.draw(params)
     }
-    public update(params) {
+    public draw(params) {
         this.width = params.width;
         this.height = params.height;
         this.tint = 0x000000;

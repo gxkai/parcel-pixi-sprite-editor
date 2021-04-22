@@ -1,7 +1,7 @@
 import * as PIXI from 'pixi.js-legacy';
 import calculateComponentPositionAndSize, {calculateSurroundPoints} from "./calculateComponentPositionAndSize";
 import {calculateRotatedAngle, calculateRotatedPointCoordinate,
-    judeReactangkesCollision, mod360} from './translate';
+    judeRectanglesCollision, mod360} from './translate';
 import Dot from "./dot";
 import Component from "./component";
 import Border from "./border";
@@ -12,8 +12,8 @@ import Selection from "./selection";
 (window as any).PIXI = PIXI;
 
 let app: PIXI.Application;
-//矩形框
-let selections = [];
+//选中元素
+let selectedComponents: Component[] = [];
 //
 const data = {
     pointList: ['lt', 't', 'rt', 'r', 'rb', 'b', 'lb', 'l'], // 八个方向
@@ -75,17 +75,15 @@ function getRandom(min, max) {
 }
 // 清除选中
 function clearSelections() {
-    selections.forEach(_ => {
-        _.visible = false;
+    selectedComponents.forEach(_ => {
+        _.selection.visible = false;
     })
 }
 function setup(params){
-    const {x, y, angle} = params
     const object = new Component(params);
+    selectedComponents.push(object);
 
     app.stage.addChild(object);
-
-    const container = object;
 
     const [
         newLTPoint,
@@ -95,54 +93,23 @@ function setup(params){
         newTPoint,
         newBPoint,
         newLPoint,
-        newRPoint
-    ] = [
-        calculateRotatedPointCoordinate({x, y}
-            , {x: x + object.width/2, y: y + object.height/2}, angle
-        ),
-        calculateRotatedPointCoordinate({
-            x: x + object.width,
-            y: y,
-        }, {x: x + object.width/2, y: y + object.height/2}, angle),
-        calculateRotatedPointCoordinate({
-            x: x,
-            y: y + object.height,
-        }, {x: x + object.width/2, y: y + object.height/2}, angle),
-        calculateRotatedPointCoordinate({
-            x: x + object.width,
-            y: y + object.height,
-        }, {x: x + object.width/2, y: y + object.height/2}, angle),
-
-        calculateRotatedPointCoordinate({
-            x: x + object.width/2,
-            y: y
-        }, {x: x + object.width/2, y: y + object.height/2}, angle),
-
-        calculateRotatedPointCoordinate({
-            x: x + object.width/2,
-            y: y + object.height
-        }, {x: x + object.width/2, y: y + object.height/2}, angle),
-        calculateRotatedPointCoordinate({
-            x: x,
-            y: y + object.height/2
-        }, {x: x + object.width/2, y: y + object.height/2}, angle),
-        calculateRotatedPointCoordinate({
-            x: x + object.width,
-            y: y + object.height/2
-        }, {x: x + object.width/2, y: y + object.height/2}, angle)
-    ]
+        newRPoint,
+        newUBPoint
+    ]= object.points
     const border = new Border([newLTPoint, newRTPoint, newRBPoint, newLBPoint])
-    const rotation = new Dot(calculateRotatedPointCoordinate({
-        x: x + object.width/2,
-        y: y + object.height + 50
-    }, {x: x + object.width/2, y: y + object.height/2}, angle), 'rotation')
+    const rotation = new Dot(newUBPoint, 'rotation')
     rotation.on('pointerdown', function (event) {
         let dragging = true;
         const oldPoint = {
             x: event.data.global.x,
             y: event.data.global.y
         }
-        const oldAngle = container.angle;
+        const oldAngle = object.angle;
+        let groupComponents: Component[] = [];
+        if (object.typeName === 'group') {
+            groupComponents = selectedComponents.filter(_ => _.pid === object.uuid);
+        }
+
         function onDragEnd() {
             dragging = false;
         }
@@ -154,42 +121,18 @@ function setup(params){
                         x: event.data.global.x,
                         y: event.data.global.y
                     }
-
-                    container.angle = oldAngle + calculateRotatedAngle(oldPoint, newPoint, {
-                        x: container.x,
-                        y: container.y
-                    });
-
-                    const result = calculateSurroundPoints({
-                        x: container.x,
-                        y: container.y
-                    }, container);
-                    if (
-                        !result
-                    ) return
-                    const {
-                        newLTPoint,
-                        newRTPoint,
-                        newLBPoint,
-                        newRBPoint,
-                        newTPoint,
-                        newBPoint,
-                        newLPoint,
-                        newRPoint,
-                        newUBPoint
-                    } = result
-
-
-                    lt.update(newLTPoint)
-                    rt.update(newRTPoint)
-                    lb.update(newLBPoint)
-                    rb.update(newRBPoint)
-                    t.update(newTPoint)
-                    b.update(newBPoint)
-                    l.update(newLPoint)
-                    r.update(newRPoint)
-                    border.update([newLTPoint, newRTPoint, newRBPoint, newLBPoint, newLTPoint])
-                    rotation.update(newUBPoint)
+                    const newCenter = {
+                        x: object.x,
+                        y: object.y
+                    }
+                    const diffAngle = calculateRotatedAngle(oldPoint, newPoint, newCenter);
+                    object.angle = oldAngle + diffAngle;
+                    object.update();
+                    // if (object.typeName === 'group') {
+                    //     groupComponents.forEach(_ => {
+                    //         // _.update(_.points.map(_ => calculateRotatedPointCoordinate(_, newCenter, diffAngle)))
+                    //     })
+                    // }
                 }
             })
     })
@@ -205,21 +148,21 @@ function setup(params){
 
     [lt, rt, lb, rb, t, b, l, r].forEach(_ => {
         _.on('pointerover', function (event) {
-            data.curComponent = container;
+            data.curComponent = object;
             data.cursors = getCursor();
             this.cursor = data.cursors[_.name]
         }).on('pointerdown', function(event) {
             event.stopPropagation();
             let dragging = true;
             // 组件宽高比
-            const proportion = container.proportion;
+            const proportion = object.proportion;
 
             // 是否需要等比例缩放
-            const needLockProportion = container.needLockProportion;
+            const needLockProportion = object.needLockProportion;
             // 组件中心点
             const  center = {
-                x: container.x,
-                y: container.y
+                x: object.x,
+                y: object.y
             }
             // 当前点击坐标
             const curPoint = {
@@ -243,35 +186,12 @@ function setup(params){
                             x: event.data.global.x,
                             y: event.data.global.y,
                         }
-                        const result  = calculateComponentPositionAndSize(_.name, container, curPosition,proportion, needLockProportion, {
+                       calculateComponentPositionAndSize(_.name, object, curPosition,proportion, needLockProportion, {
                             center: center,
                             curPoint: curPoint,
                             symmetricPoint: symmetricPoint,
                         })
-                        if (
-                            !result
-                        ) return
-                        const {
-                            newLTPoint,
-                            newRTPoint,
-                            newLBPoint,
-                            newRBPoint,
-                            newTPoint,
-                            newBPoint,
-                            newLPoint,
-                            newRPoint,
-                            newUBPoint
-                        } = result
-                        lt.update(newLTPoint)
-                        rt.update(newRTPoint)
-                        lb.update(newLBPoint)
-                        rb.update(newRBPoint)
-                        t.update(newTPoint)
-                        b.update(newBPoint)
-                        l.update(newLPoint)
-                        r.update(newRPoint)
-                        border.update([newLTPoint, newRTPoint, newRBPoint, newLBPoint, newLTPoint])
-                        rotation.update(newUBPoint)
+                        object.update()
                     }
                 })
         })
@@ -279,20 +199,35 @@ function setup(params){
 
     const dots = new Dots([lt, rt, lb, rb, t, b, l, r, rotation]);
     const selection = new Selection([border, dots]);
-    selections.push(selection);
-
-    app.stage.addChild(
-        selection
-    )
-
-    container
+    object.selection = selection;
+    object
         .on('pointerdown', function (event) {
-            const diff = { x: event.data.global.x - this.x, y: event.data.global.y - this.y }
-            const data = event.data;
+            app.stage.addChild(selection);
+            const startPoint = {
+                x: event.data.global.x,
+                y: event.data.global.y
+            }
+            const oldPoint = {
+                x: object.x,
+                y: object.y
+            }
             let dragging = true;
             selection.visible = true;
             selection.border.visible = true;
             selection.dots.visible = true;
+            let positionList: PIXI.IPointData[] = []
+            let groupComponents: Component[] = [];
+            if (object.typeName === 'group') {
+                groupComponents = selectedComponents.filter(_ => _.pid === object.uuid)
+                positionList = groupComponents.map(_ =>
+                    {
+                        return {
+                            x: _.x,
+                            y: _.y
+                        }
+                    }
+                )
+            }
             function onDragEnd() {
                 dragging = false;
             }
@@ -300,37 +235,28 @@ function setup(params){
                 .on('pointerupoutside', onDragEnd)
                 .on('pointermove', function (event) {
                     if (dragging) {
-                        const newPosition = data.getLocalPosition(container.parent);
-                        const newCenterPoint = {x:newPosition.x - diff.x, y: newPosition.y - diff.y}
-                        const result = calculateSurroundPoints(newCenterPoint, container);
-                        if (
-                            !result
-                        ) return
-                        const {
-                            newLTPoint,
-                            newRTPoint,
-                            newLBPoint,
-                            newRBPoint,
-                            newTPoint,
-                            newBPoint,
-                            newLPoint,
-                            newRPoint,
-                            newUBPoint
-                        } = result
-                        lt.update(newLTPoint)
-                        rt.update(newRTPoint)
-                        lb.update(newLBPoint)
-                        rb.update(newRBPoint)
-                        t.update(newTPoint)
-                        b.update(newBPoint)
-                        l.update(newLPoint)
-                        r.update(newRPoint)
-                        border.update([newLTPoint, newRTPoint, newRBPoint, newLBPoint, newLTPoint])
-                        rotation.update(newUBPoint)
+                        const endPoint = {
+                            x: event.data.global.x,
+                            y: event.data.global.y
+                        }
+                        const diff = {
+                            x: endPoint.x - startPoint.x,
+                            y: endPoint.y - startPoint.y
+                        }
+                        object.x = oldPoint.x + diff.x;
+                        object.y = oldPoint.y + diff.y;
+                        object.update();
+                        if (object.typeName === 'group') {
+                            groupComponents.forEach((_, i) => {
+                                _.x = positionList[i].x + diff.x
+                                _.y = positionList[i].y + diff.y
+                                _.update();
+                            })
+                        }
                     }
                 })
         })
-
+        return {object, selection};
 }
 export default function App(parent: HTMLElement, WORLD_WIDTH: number, WORLD_HEIGHT: number) {
     app = new PIXI.Application({backgroundColor: 0x000000, antialias:true,forceCanvas: false, resolution: 2});
@@ -344,6 +270,9 @@ export default function App(parent: HTMLElement, WORLD_WIDTH: number, WORLD_HEIG
         height: app.screen.height
     })
     const mask = new Mask([])
+    const {object: group, selection: groupSelection} = setup({
+        x: 0, y: 0, angle: 0, zIndex: 20, w: 0, h: 0, typeName: 'group', needLockProportion: false
+    })
     bg.on('pointerdown', function(event){
         let dragging = true;
         const startPoint = {
@@ -379,37 +308,48 @@ export default function App(parent: HTMLElement, WORLD_WIDTH: number, WORLD_HEIG
                 }
                 const maskPoints: PIXI.IPointData[] = [{x: xMin, y: yMin}, {x: xMax, y: yMin}, {x: xMax, y: yMax}, {x: xMin, y: yMax}]
                 mask.update(maskPoints);
-                const newSelections = selections.filter(selection => {
-                    const isCollision = judeReactangkesCollision(maskPoints, selection.border.points);
+                const newSelectedComponents= selectedComponents.filter(_ => _.typeName !=='group').filter(({selection}) => {
+                    const isCollision = judeRectanglesCollision(maskPoints, selection.border.points);
                     selection.border.visible = false;
                     selection.dots.visible = false;
                     return isCollision;
                 })
-                if (newSelections.length === 0) {
+                group.selection.visible = false;
+                if (newSelectedComponents.length === 0) {
                     return;
-                } else if (newSelections.length === 1) {
-                    const selection = newSelections[0];
-                    const border = selection.children.find(q => q.name === 'border') as Border;
-                    const dots = selection.children.find(q => q.name === 'dots') as Border;
+                } else if (newSelectedComponents.length === 1) {
+                    const selection = newSelectedComponents[0].selection;
                     selection.visible = true;
-                    border.visible = true;
-                    dots.visible = true;
+                    selection.border.visible = true;
+                    selection.dots.visible = true;
+                    app.stage.addChild(selection)
                 } else {
-                    newSelections.forEach(selection => {
+                    // group.visible = true;
+                    newSelectedComponents.forEach(_ => {
+                        _.pid = group.uuid;
+                        const {selection} = _;
                         selection.visible = true;
                         selection.border.visible = true;
                         selection.dots.visible = false;
+                        app.stage.addChild(selection)
                     })
-                    // const pointListArr = newSelections.map(selection => selection.border.points);
-                    // const xMin =  Math.min(...pointXList);
-                    // const xMax =  Math.max(...pointXList);
-                    // const yMin =  Math.min(...pointYList);
-                    // const yMax =  Math.max(...pointYList);
-                    // console.log(xMin,xMax,yMin,yMax)
-                    // const component = new Component({
-                    //     x: xMin, y: yMin, angle: 0, zIndex: 20, w: xMax - xMin, h: yMax - yMin, typeName: 'group', needLockProportion: true
-                    // })
-                    // app.stage.addChild(component)
+                    const pointList = newSelectedComponents.map(({selection}) => selection.border.points).reduce((previousValue, currentValue) => {
+                       return previousValue.concat(currentValue)
+                    },[]);
+                    const pointXList = pointList.map(p => p.x)
+                    const pointYList = pointList.map(p => p.y)
+                    const xMin =  Math.min(...pointXList);
+                    const xMax =  Math.max(...pointXList);
+                    const yMin =  Math.min(...pointYList);
+                    const yMax =  Math.max(...pointYList);
+                    group.draw({
+                        x: xMin, y: yMin, angle: 0, zIndex: 20, w: xMax - xMin, h: yMax - yMin, typeName: 'group', needLockProportion: false
+                    })
+                    group.update();
+                    group.selection.visible = true;
+                    group.selection.dots.visible = true;
+                    app.stage.addChild(group);
+                    app.stage.addChild(groupSelection);
                 }
                 app.stage.addChild(mask);
             }
