@@ -105,10 +105,6 @@ function setup(params){
             y: event.data.global.y
         }
         const oldAngle = object.angle;
-        let groupComponents: Component[] = [];
-        if (object.typeName === 'group') {
-            groupComponents = selectedComponents.filter(_ => _.pid === object.uuid);
-        }
 
         function onDragEnd() {
             dragging = false;
@@ -128,11 +124,6 @@ function setup(params){
                     const diffAngle = calculateRotatedAngle(oldPoint, newPoint, newCenter);
                     object.angle = oldAngle + diffAngle;
                     object.update();
-                    // if (object.typeName === 'group') {
-                    //     groupComponents.forEach(_ => {
-                    //         // _.update(_.points.map(_ => calculateRotatedPointCoordinate(_, newCenter, diffAngle)))
-                    //     })
-                    // }
                 }
             })
     })
@@ -216,18 +207,6 @@ function setup(params){
             selection.border.visible = true;
             selection.dots.visible = true;
             let positionList: PIXI.IPointData[] = []
-            let groupComponents: Component[] = [];
-            if (object.typeName === 'group') {
-                groupComponents = selectedComponents.filter(_ => _.pid === object.uuid)
-                positionList = groupComponents.map(_ =>
-                    {
-                        return {
-                            x: _.x,
-                            y: _.y
-                        }
-                    }
-                )
-            }
             function onDragEnd() {
                 dragging = false;
             }
@@ -246,13 +225,6 @@ function setup(params){
                         object.x = oldPoint.x + diff.x;
                         object.y = oldPoint.y + diff.y;
                         object.update();
-                        if (object.typeName === 'group') {
-                            groupComponents.forEach((_, i) => {
-                                _.x = positionList[i].x + diff.x
-                                _.y = positionList[i].y + diff.y
-                                _.update();
-                            })
-                        }
                     }
                 })
         })
