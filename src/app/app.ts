@@ -9,6 +9,7 @@ import Mask from "./mask";
 import Background from "./background";
 import Dots from "./dots";
 import Selection from "./selection";
+import Group from "./group";
 (window as any).PIXI = PIXI;
 // todo compose decompose
 let app: PIXI.Application;
@@ -55,7 +56,6 @@ function getCursor() {
             const angleLimit = angleToCursor[lastMatchIndex]
             if (angle < 23 || angle >= 338) {
                 result[point] = 'nw-resize'
-
                 return
             }
 
@@ -79,11 +79,11 @@ function clearSelections() {
         _.selection.visible = false;
     })
 }
-function setup(params){
+function createComponent(params){
     const object = new Component(params);
     selectedComponents.push(object);
 
-    app.stage.addChild(object);
+    // app.stage.addChild(object);
 
     const [
         newLTPoint,
@@ -193,7 +193,7 @@ function setup(params){
     object.selection = selection;
     object
         .on('pointerdown', function (event) {
-            app.stage.addChild(selection);
+            // app.stage.addChild(selection);
             const startPoint = {
                 x: event.data.global.x,
                 y: event.data.global.y
@@ -206,7 +206,6 @@ function setup(params){
             selection.visible = true;
             selection.border.visible = true;
             selection.dots.visible = true;
-            let positionList: PIXI.IPointData[] = []
             function onDragEnd() {
                 dragging = false;
             }
@@ -228,7 +227,7 @@ function setup(params){
                     }
                 })
         })
-        return {object, selection};
+        return object;
 }
 export default function App(parent: HTMLElement, WORLD_WIDTH: number, WORLD_HEIGHT: number) {
     app = new PIXI.Application({backgroundColor: 0x000000, antialias:true,forceCanvas: false, resolution: 2});
@@ -325,24 +324,6 @@ export default function App(parent: HTMLElement, WORLD_WIDTH: number, WORLD_HEIG
         angle: 0,
         zIndex: 20,
     }
-    const params1 = {
-        url: "assets/mask.png",
-        w: 200,
-        h: 200,
-        x: 400,
-        y: 100,
-        angle: 0,
-        zIndex: 20,
-    }
-    const params2 = {
-        url: "assets/mask.png",
-        w: 200,
-        h: 200,
-        x: 0,
-        y: 0,
-        angle: 0,
-        zIndex: 20,
-    }
     const params3 = {
         url: "assets/mask.png",
         w: 200,
@@ -353,48 +334,9 @@ export default function App(parent: HTMLElement, WORLD_WIDTH: number, WORLD_HEIG
         zIndex: 20,
         needLockProportion: true
     }
-    const params4 = {
-        url: "assets/mask.png",
-        w: 200,
-        h: 200,
-        x: 100,
-        y: 400,
-        angle: 90,
-        zIndex: 20,
-    }
-    const params5 = {
-        url: "assets/mask.png",
-        w: 200,
-        h: 200,
-        x: 400,
-        y: 400,
-        angle: 135,
-        zIndex: 20,
-    }
-    const params6 = {
-        url: "assets/mask.png",
-        w: 200,
-        h: 200,
-        x: 600,
-        y: 400,
-        angle: 225,
-        zIndex: 20,
-    }
-    const params7 = {
-        url: "assets/mask.png",
-        w: 200,
-        h: 200,
-        x: 200,
-        y: 600,
-        angle: 315,
-        zIndex: 20,
-    }
-    setup(params);
-    // setup(params1);
-    // setup(params2);
-    setup(params3);
-    // setup(params4);
-    // setup(params5);
-    // setup(params6);
-    // setup(params7);
+    const comp1 = createComponent(params);
+    const comp2 = createComponent(params3);
+    const compose = new Group({components: [comp1, comp2]})
+    app.stage.addChild(compose)
+    console.log(compose.points)
 }
