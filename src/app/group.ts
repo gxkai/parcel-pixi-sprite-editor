@@ -1,10 +1,14 @@
 import * as PIXI from 'pixi.js-legacy'
 import {calculateSurroundPoints} from "./calculateComponentPositionAndSize";
+import Selection from "./selection";
 class Group extends PIXI.Container{
+    public selection: Selection;
+    public components;
     constructor(params) {
         super();
         const {components} = params;
-        components.forEach(_ => {
+        this.components = components;
+        components.forEach((_, i) => {
             _.interactive = false;
             this.addChild(_)
         })
@@ -20,14 +24,23 @@ class Group extends PIXI.Container{
         this.interactive = true;
         this.buttonMode = true;
         this.hitArea = new PIXI.Rectangle(xMin, yMin, xMax - xMin, yMax - yMin);
-        this.pivot.set(this.width/2, this.height/2);
-        this.position.set(this.width/2, this.height/2)
+        this.pivot.x = (xMin + xMax)/2
+        this.pivot.y = (yMin + yMax)/2
+        this.position.set(xMin + this.pivot.x - xMin, yMin + this.pivot.y - yMin)
+        this.angle = 0
+    }
+    public update(points = this.points) {
+        this.selection.update(points)
+    }
+    public get proportion() {
+        return this.width / this.height;
     }
     public get points() {
+        const {left,right, top, bottom} = this.getBounds()
         return  calculateSurroundPoints({
-            x: this.x,
-            y: this.y
-        }, this);
+            x: (left + right)/2, //this.x,
+            y: (top + bottom)/2//this.y
+        }, this)
     }
 }
 export default Group;

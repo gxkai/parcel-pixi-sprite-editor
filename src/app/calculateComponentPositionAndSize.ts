@@ -62,20 +62,6 @@ export function calculateSurroundPoints(newCenterPoint, container) {
         y: BPoint.y + 50
     }, newCenterPoint, container.angle);
     return [newLTPoint, newRTPoint, newLBPoint, newRBPoint, newTPoint, newBPoint, newLPoint, newRPoint, newUBPoint];
-    // return {
-    //     newLTPoint: calculateRotatedPointCoordinate(newLTPoint, newCenterPoint, container.angle),
-    //     newRTPoint: calculateRotatedPointCoordinate(newRTPoint, newCenterPoint, container.angle),
-    //     newLBPoint: calculateRotatedPointCoordinate(newLBPoint, newCenterPoint, container.angle),
-    //     newRBPoint: calculateRotatedPointCoordinate(newRBPoint, newCenterPoint, container.angle),
-    //     newTPoint: calculateRotatedPointCoordinate(newTPoint, newCenterPoint, container.angle),
-    //     newBPoint: calculateRotatedPointCoordinate(newBPoint, newCenterPoint, container.angle),
-    //     newLPoint: calculateRotatedPointCoordinate(newLPoint, newCenterPoint, container.angle),
-    //     newRPoint: calculateRotatedPointCoordinate(newRPoint, newCenterPoint, container.angle),
-    //     newUBPoint: calculateRotatedPointCoordinate({
-    //         x: newBPoint.x,
-    //         y: newBPoint.y + 50
-    //     }, newCenterPoint, container.angle),
-    // }
 }
 function calculateLeftTop(container, curPosition,proportion, needLockProportion, pointInfo) {
     const { symmetricPoint } = pointInfo

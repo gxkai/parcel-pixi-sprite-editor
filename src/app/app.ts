@@ -79,12 +79,8 @@ function clearSelections() {
         _.selection.visible = false;
     })
 }
-function createComponent(params){
-    const object = new Component(params);
+function createComponent(object){
     selectedComponents.push(object);
-
-    // app.stage.addChild(object);
-
     const [
         newLTPoint,
         newRTPoint,
@@ -193,7 +189,8 @@ function createComponent(params){
     object.selection = selection;
     object
         .on('pointerdown', function (event) {
-            // app.stage.addChild(selection);
+            app.stage.addChild(selection);
+            object.update();
             const startPoint = {
                 x: event.data.global.x,
                 y: event.data.global.y
@@ -247,7 +244,7 @@ export default function App(parent: HTMLElement, WORLD_WIDTH: number, WORLD_HEIG
             x: event.data.global.x,
             y: event.data.global.y
         }
-        clearSelections();
+        // clearSelections();
         function onDragEnd() {
             dragging = false;
             mask.update([])
@@ -320,7 +317,7 @@ export default function App(parent: HTMLElement, WORLD_WIDTH: number, WORLD_HEIG
         w: 200,
         h: 200,
         x: 100,
-        y: 100,
+        y: 500,
         angle: 0,
         zIndex: 20,
     }
@@ -334,9 +331,10 @@ export default function App(parent: HTMLElement, WORLD_WIDTH: number, WORLD_HEIG
         zIndex: 20,
         needLockProportion: true
     }
-    const comp1 = createComponent(params);
-    const comp2 = createComponent(params3);
-    const compose = new Group({components: [comp1, comp2]})
+    const comp1 = createComponent(new Component(params));
+    const comp2 = createComponent(new Component(params3));
+    app.stage.addChild(comp1)
+    app.stage.addChild(comp2)
+    const compose = createComponent(new Group({components: [createComponent(new Component(params)), createComponent(new Component(params3))]}))
     app.stage.addChild(compose)
-    console.log(compose.points)
 }
