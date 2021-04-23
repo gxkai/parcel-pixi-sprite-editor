@@ -17,7 +17,8 @@
         ],
         "typeRoots": [
             "node_modules/@types"
-        ]
+        ],
+      "allowSyntheticDefaultImports": true
     },
     "include": [
         "src/app/**/*.ts",

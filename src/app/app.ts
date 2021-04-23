@@ -9,12 +9,15 @@ import Mask from "./mask";
 import Background from "./background";
 import Dots from "./dots";
 import Selection from "./selection";
+import keyboardjs from "keyboardjs";
 import Group from "./group";
 (window as any).PIXI = PIXI;
 // todo compose decompose
 let app: PIXI.Application;
 //选中元素
 let selectedComponents: Component[] = [];
+//连续选中标记
+let CAN_COMBINED = false;
 //
 const data = {
     pointList: ['lt', 't', 'rt', 'r', 'rb', 'b', 'lb', 'l'], // 八个方向
@@ -77,10 +80,10 @@ function getRandom(min, max) {
 function clearSelections() {
     selectedComponents.forEach(_ => {
         _.selection.visible = false;
-    })
+    });
+    selectedComponents = [];
 }
 function createComponent(object){
-    selectedComponents.push(object);
     const [
         newLTPoint,
         newRTPoint,
@@ -189,6 +192,10 @@ function createComponent(object){
     object.selection = selection;
     object
         .on('pointerdown', function (event) {
+            if (!CAN_COMBINED) {
+                clearSelections();
+            }
+            !selectedComponents.some(_ => _.uuid === object.uuid) && selectedComponents.push(object);
             app.stage.addChild(selection);
             object.update();
             const startPoint = {
@@ -237,79 +244,82 @@ export default function App(parent: HTMLElement, WORLD_WIDTH: number, WORLD_HEIG
         width: app.screen.width,
         height: app.screen.height
     })
-    const mask = new Mask([])
     bg.on('pointerdown', function(event){
-        let dragging = true;
-        const startPoint = {
-            x: event.data.global.x,
-            y: event.data.global.y
-        }
-        // clearSelections();
-        function onDragEnd() {
-            dragging = false;
-            mask.update([])
-        }
-        this.on('pointermove', function (event) {
-            if (dragging) {
-                const endPoint = {
-                    x: event.data.global.x,
-                    y: event.data.global.y
-                }
-                // 顺时针取点
-                let xMin, xMax, yMin, yMax;
-                if (startPoint.x > endPoint.x) {
-                    xMin = endPoint.x;
-                    xMax = startPoint.x;
-                } else {
-                    xMin = startPoint.x;
-                    xMax = endPoint.x;
-                }
-                if (startPoint.y > endPoint.y) {
-                    yMin = endPoint.y;
-                    yMax = startPoint.y;
-                } else {
-                    yMin = startPoint.y;
-                    yMax = endPoint.y;
-                }
-                const maskPoints: PIXI.IPointData[] = [{x: xMin, y: yMin}, {x: xMax, y: yMin}, {x: xMax, y: yMax}, {x: xMin, y: yMax}]
-                mask.update(maskPoints);
-                const newSelectedComponents= selectedComponents.filter(_ => _.typeName !=='group').filter(({selection}) => {
-                    const isCollision = judeRectanglesCollision(maskPoints, selection.border.points);
-                    selection.border.visible = false;
-                    selection.dots.visible = false;
-                    return isCollision;
-                })
-                if (newSelectedComponents.length === 0) {
-                    return;
-                } else if (newSelectedComponents.length === 1) {
-                    const selection = newSelectedComponents[0].selection;
-                    selection.visible = true;
-                    selection.border.visible = true;
-                    selection.dots.visible = true;
-                    app.stage.addChild(selection)
-                } else {
-                    newSelectedComponents.forEach(_ => {
-                        const {selection} = _;
-                        selection.visible = true;
-                        selection.border.visible = true;
-                        selection.dots.visible = false;
-                        app.stage.addChild(selection)
-                    })
-                    const pointList = newSelectedComponents.map(({selection}) => selection.border.points).reduce((previousValue, currentValue) => {
-                       return previousValue.concat(currentValue)
-                    },[]);
-                    const pointXList = pointList.map(p => p.x)
-                    const pointYList = pointList.map(p => p.y)
-                    const xMin =  Math.min(...pointXList);
-                    const xMax =  Math.max(...pointXList);
-                    const yMin =  Math.min(...pointYList);
-                    const yMax =  Math.max(...pointYList);
-                }
-                app.stage.addChild(mask);
-            }
-        }).on('pointerup', onDragEnd)
-            .on('pointerupoutside', onDragEnd)
-    });
+        clearSelections();
+    })
+    // const mask = new Mask([])
+    // bg.on('pointerdown', function(event){
+    //     let dragging = true;
+    //     const startPoint = {
+    //         x: event.data.global.x,
+    //         y: event.data.global.y
+    //     }
+    //     // clearSelections();
+    //     function onDragEnd() {
+    //         dragging = false;
+    //         mask.update([])
+    //     }
+    //     this.on('pointermove', function (event) {
+    //         if (dragging) {
+    //             const endPoint = {
+    //                 x: event.data.global.x,
+    //                 y: event.data.global.y
+    //             }
+    //             // 顺时针取点
+    //             let xMin, xMax, yMin, yMax;
+    //             if (startPoint.x > endPoint.x) {
+    //                 xMin = endPoint.x;
+    //                 xMax = startPoint.x;
+    //             } else {
+    //                 xMin = startPoint.x;
+    //                 xMax = endPoint.x;
+    //             }
+    //             if (startPoint.y > endPoint.y) {
+    //                 yMin = endPoint.y;
+    //                 yMax = startPoint.y;
+    //             } else {
+    //                 yMin = startPoint.y;
+    //                 yMax = endPoint.y;
+    //             }
+    //             const maskPoints: PIXI.IPointData[] = [{x: xMin, y: yMin}, {x: xMax, y: yMin}, {x: xMax, y: yMax}, {x: xMin, y: yMax}]
+    //             mask.update(maskPoints);
+    //             const newSelectedComponents= selectedComponents.filter(_ => _.typeName !=='group').filter(({selection}) => {
+    //                 const isCollision = judeRectanglesCollision(maskPoints, selection.border.points);
+    //                 selection.border.visible = false;
+    //                 selection.dots.visible = false;
+    //                 return isCollision;
+    //             })
+    //             if (newSelectedComponents.length === 0) {
+    //                 return;
+    //             } else if (newSelectedComponents.length === 1) {
+    //                 const selection = newSelectedComponents[0].selection;
+    //                 selection.visible = true;
+    //                 selection.border.visible = true;
+    //                 selection.dots.visible = true;
+    //                 app.stage.addChild(selection)
+    //             } else {
+    //                 newSelectedComponents.forEach(_ => {
+    //                     const {selection} = _;
+    //                     selection.visible = true;
+    //                     selection.border.visible = true;
+    //                     selection.dots.visible = false;
+    //                     app.stage.addChild(selection)
+    //                 })
+    //                 const pointList = newSelectedComponents.map(({selection}) => selection.border.points).reduce((previousValue, currentValue) => {
+    //                    return previousValue.concat(currentValue)
+    //                 },[]);
+    //                 const pointXList = pointList.map(p => p.x)
+    //                 const pointYList = pointList.map(p => p.y)
+    //                 const xMin =  Math.min(...pointXList);
+    //                 const xMax =  Math.max(...pointXList);
+    //                 const yMin =  Math.min(...pointYList);
+    //                 const yMax =  Math.max(...pointYList);
+    //             }
+    //             app.stage.addChild(mask);
+    //         }
+    //     }).on('pointerup', onDragEnd)
+    //         .on('pointerupoutside', onDragEnd)
+    // });
     app.stage.addChild(bg);
     // object
     const params = {
@@ -335,6 +345,67 @@ export default function App(parent: HTMLElement, WORLD_WIDTH: number, WORLD_HEIG
     const comp2 = createComponent(new Component(params3));
     app.stage.addChild(comp1)
     app.stage.addChild(comp2)
-    const compose = createComponent(new Group({components: [createComponent(new Component(params)), createComponent(new Component(params3))]}))
-    app.stage.addChild(compose)
+    // const compose = createComponent(new Group({components: [createComponent(new Component(params)), createComponent(new Component(params3))]}))
+    // app.stage.addChild(compose)
+
+
+    keyboardjs.bind(
+        "shift",
+        e => {
+            CAN_COMBINED = true;
+        },
+        e => {
+            CAN_COMBINED = false;
+        }
+    );
+    keyboardjs.bind(
+        "ctrl",
+        e => {
+            CAN_COMBINED = true;
+        },
+        e => {
+            CAN_COMBINED = false;
+        }
+    );
+    keyboardjs.bind("del", e => {
+
+    });
+    keyboardjs.bind("ctrl + z", e => {
+
+    });
+    keyboardjs.bind("ctrl + y", e => {
+
+    });
+    [
+        "left",
+        "right",
+        "up",
+        "down",
+        "alt + left",
+        "alt + right"
+    ].forEach(e => {
+        keyboardjs.bind(e, () => {
+
+        });
+    });
+    keyboardjs.bind("alt + g", e => {
+
+    });
+    // compose
+    keyboardjs.bind("ctrl + g", e => {
+        if (selectedComponents.length > 1) {
+            const compose = createComponent(new Group({
+                components: selectedComponents.map(_ => {
+                    _.selection.visible = false;
+                    return _;
+                })
+            }))
+            compose.selection.visible = true;
+            app.stage.addChild(compose.selection)
+            app.stage.addChild(compose)
+        }
+    });
+    keyboardjs.bind("ctrl + shift + g", e => {
+
+    })
 }
