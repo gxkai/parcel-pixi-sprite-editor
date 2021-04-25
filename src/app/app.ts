@@ -391,10 +391,11 @@ export default function App(parent: HTMLElement, WORLD_WIDTH: number, WORLD_HEIG
     keyboardjs.bind("alt + g", e => {
 
     });
+    let compose;
     // compose
     keyboardjs.bind("ctrl + g", e => {
         if (selectedComponents.length > 1) {
-            const compose = createComponent(new Group({
+            compose = createComponent(new Group({
                 components: selectedComponents.map(_ => {
                     _.selection.visible = false;
                     return _;
@@ -405,7 +406,12 @@ export default function App(parent: HTMLElement, WORLD_WIDTH: number, WORLD_HEIG
             app.stage.addChild(compose)
         }
     });
+    // todo decompose
     keyboardjs.bind("ctrl + shift + g", e => {
+        compose.selection.destroy()
+        compose.components.forEach(_ => {
+            app.stage.addChild(_);
+        })
 
     })
 }
