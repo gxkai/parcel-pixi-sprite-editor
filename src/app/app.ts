@@ -1,7 +1,9 @@
 import * as PIXI from 'pixi.js-legacy';
 import calculateComponentPositionAndSize, {calculateSurroundPoints} from "./calculateComponentPositionAndSize";
-import {calculateRotatedAngle, calculateRotatedPointCoordinate,
-    judeRectanglesCollision, mod360} from './translate';
+import {
+    angleToRadian, calculateLength, calculateRotatedAngle, calculateRotatedPointCoordinate,
+    judeRectanglesCollision, mod360, mod90
+} from './translate';
 import Dot from "./dot";
 import Component from "./component";
 import Border from "./border";
@@ -335,16 +337,16 @@ export default function App(parent: HTMLElement, WORLD_WIDTH: number, WORLD_HEIG
         url: "assets/mask.png",
         w: 200,
         h: 200,
-        x: 600,
-        y: 100,
-        angle: 60,
+        x: 100,
+        y: 200,
+        angle: 0,
         zIndex: 20,
         needLockProportion: true
     }
-    const comp1 = createComponent(new Component(params));
     const comp2 = createComponent(new Component(params3));
-    app.stage.addChild(comp1)
+    const comp1 = createComponent(new Component(params));
     app.stage.addChild(comp2)
+    app.stage.addChild(comp1)
     // const compose = createComponent(new Group({components: [createComponent(new Component(params)), createComponent(new Component(params3))]}))
     // app.stage.addChild(compose)
 
@@ -402,16 +404,46 @@ export default function App(parent: HTMLElement, WORLD_WIDTH: number, WORLD_HEIG
                 })
             }))
             compose.selection.visible = true;
-            app.stage.addChild(compose.selection)
             app.stage.addChild(compose)
+            app.stage.addChild(compose.selection)
         }
     });
     // todo decompose
     keyboardjs.bind("ctrl + shift + g", e => {
-        compose.selection.destroy()
-        compose.components.forEach(_ => {
-            app.stage.addChild(_);
+        compose.children.forEach(_ => {
+            const angle = _.angle + compose.angle;
+            const vertextData = _.vertexData;
+            let p1 = {
+                x: vertextData[0],
+                y: vertextData[1],
+            }
+            let p2 = {
+                x: vertextData[2],
+                y: vertextData[3]
+            }
+            let p3 = {
+                x: vertextData[4],
+                y: vertextData[5]
+            }
+            const newCenter = {
+                x: (p1.x + p2.x) /2,
+                y: (p1.y + p3.y) / 2
+            }
+            const newP1 = calculateRotatedPointCoordinate(p1, newCenter, -angle);
+            console.log(newP1);
+            app.stage.addChild(createComponent(new Component({
+                x: newP1.x,
+                y: newP1.y,
+                angle: angle,
+                zIndex: _.zIndex,
+                w: calculateLength([p1, p2]),
+                h: calculateLength([p2, p3]),
+                typeName: 'single',
+                needLockProportion: false,
+                url: _.url
+            })));
         })
-
+        compose.selection.destroy()
+        app.stage.removeChild(compose)
     })
 }

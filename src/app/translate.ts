@@ -1,6 +1,6 @@
 // 角度转弧度
 // Math.PI = 180 度
-function angleToRadian(angle) {
+export function angleToRadian(angle) {
     return angle * Math.PI / 180
 }
 
@@ -55,6 +55,9 @@ export function cos(rotate) {
 
 export function mod360(deg) {
     return (deg + 360) % 360
+}
+export function mod90(deg) {
+    return (deg + 360) % 90
 }
 export function calculateLength(points: [PIXI.IPointData, PIXI.IPointData]) {
     const p0 = points[0];

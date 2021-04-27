@@ -4,6 +4,7 @@ import Selection from './selection'
 import {calculateSurroundPoints} from "./calculateComponentPositionAndSize";
 class Component extends PIXI.Sprite{
     public typeName: string;
+    public url: string;
     public needLockProportion: boolean;
     public uuid: string;
     public pid: string;
@@ -12,6 +13,7 @@ class Component extends PIXI.Sprite{
         super(params.url ? PIXI.Texture.from(params.url) : PIXI.Texture.EMPTY);
         this.name = 'component';
         this.uuid = params.uuid || UUID.generate();
+        this.url = params.url;
         this.draw(params)
     }
     public draw(params) {
@@ -27,6 +29,7 @@ class Component extends PIXI.Sprite{
         this.angle = angle;
         this.typeName = typeName || 'single'
         this.needLockProportion = !!needLockProportion;
+        this.tint = 0x00ffff
     }
     public update(points = this.points) {
         this.selection.update(points)
