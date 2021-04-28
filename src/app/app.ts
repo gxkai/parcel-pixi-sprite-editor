@@ -326,8 +326,8 @@ export default function App(parent: HTMLElement, WORLD_WIDTH: number, WORLD_HEIG
     // object
     const params = {
         url: "assets/mask.png",
-        w: 200,
-        h: 200,
+        width: 200,
+        height: 200,
         x: 100,
         y: 500,
         angle: 0,
@@ -335,22 +335,17 @@ export default function App(parent: HTMLElement, WORLD_WIDTH: number, WORLD_HEIG
     }
     const params3 = {
         url: "assets/mask.png",
-        w: 200,
-        h: 200,
+        width: 200,
+        height: 200,
         x: 100,
         y: 200,
         angle: 0,
         zIndex: 20,
-        needLockProportion: true
     }
     const comp2 = createComponent(new Component(params3));
     const comp1 = createComponent(new Component(params));
     app.stage.addChild(comp2)
     app.stage.addChild(comp1)
-    // const compose = createComponent(new Group({components: [createComponent(new Component(params)), createComponent(new Component(params3))]}))
-    // app.stage.addChild(compose)
-
-
     keyboardjs.bind(
         "shift",
         e => {
@@ -401,7 +396,8 @@ export default function App(parent: HTMLElement, WORLD_WIDTH: number, WORLD_HEIG
                 components: selectedComponents.map(_ => {
                     _.selection.visible = false;
                     return _;
-                })
+                }),
+                needLockProportion: selectedComponents.some(_ => _.needLockProportion)
             }))
             compose.selection.visible = true;
             app.stage.addChild(compose)
@@ -426,24 +422,24 @@ export default function App(parent: HTMLElement, WORLD_WIDTH: number, WORLD_HEIG
                 y: vertextData[5]
             }
             const newCenter = {
-                x: (p1.x + p2.x) /2,
+                x: (p1.x + p3.x) /2,
                 y: (p1.y + p3.y) / 2
             }
             const newP1 = calculateRotatedPointCoordinate(p1, newCenter, -angle);
-            console.log(newP1);
+            const newW = calculateLength([p1, p2]);
+            const newH = calculateLength([p2, p3]);
             app.stage.addChild(createComponent(new Component({
                 x: newP1.x,
                 y: newP1.y,
                 angle: angle,
                 zIndex: _.zIndex,
-                w: calculateLength([p1, p2]),
-                h: calculateLength([p2, p3]),
-                typeName: 'single',
+                width: newW,
+                height: newH,
                 needLockProportion: false,
                 url: _.url
             })));
         })
-        compose.selection.destroy()
+        app.stage.removeChild(compose.selection)
         app.stage.removeChild(compose)
     })
 }

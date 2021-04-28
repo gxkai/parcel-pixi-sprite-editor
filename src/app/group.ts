@@ -1,12 +1,20 @@
 import * as PIXI from 'pixi.js-legacy'
 import {calculateSurroundPoints} from "./calculateComponentPositionAndSize";
 import Selection from "./selection";
+import Component from "./component";
+interface IGroup {
+     needLockProportion: boolean,
+     components: Component[]
+}
 class Group extends PIXI.Container{
     public selection: Selection;
     public components;
-    constructor(params) {
+    public needLockProportion: boolean;
+    public typeName: string;
+    public uuid: string;
+    constructor(params: IGroup) {
         super();
-        const {components} = params;
+        const { needLockProportion, components} = params
         this.components = components;
         components.forEach((_, i) => {
             _.interactive = false;
@@ -26,8 +34,11 @@ class Group extends PIXI.Container{
         this.hitArea = new PIXI.Rectangle(xMin, yMin, xMax - xMin, yMax - yMin);
         this.pivot.x = (xMin + xMax)/2
         this.pivot.y = (yMin + yMax)/2
-        this.position.set(xMin + this.pivot.x - xMin, yMin + this.pivot.y - yMin)
-        this.angle = 0
+        this.position.set(this.pivot.x, this.pivot.y)
+        this.angle =  0;
+        this.zIndex =  9999;
+        this.typeName = 'group';
+        this.needLockProportion = !!needLockProportion;
     }
     public update(points = this.points) {
         this.selection.update(points)
@@ -38,8 +49,8 @@ class Group extends PIXI.Container{
     public get points() {
         const {left,right, top, bottom} = this.getBounds()
         return  calculateSurroundPoints({
-            x: (left + right)/2, //this.x,
-            y: (top + bottom)/2//this.y
+            x: (left + right)/2,
+            y: (top + bottom)/2
         }, this)
     }
 }
