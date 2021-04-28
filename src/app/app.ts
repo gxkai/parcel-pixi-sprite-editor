@@ -17,7 +17,7 @@ import Group from "./group";
 // todo compose decompose
 let app: PIXI.Application;
 //选中元素
-let selectedComponents: Component[] = [];
+let selectedComponents: (Component | Group) [] = [];
 //连续选中标记
 let CAN_COMBINED = false;
 //
@@ -85,7 +85,7 @@ function clearSelections() {
     });
     selectedComponents = [];
 }
-function createComponent(object){
+function createComponent(object: Component | Group){
     const [
         newLTPoint,
         newRTPoint,
@@ -234,6 +234,39 @@ function createComponent(object){
                 })
         })
         return object;
+}
+function getParams(_, compose) {
+    const angle = _.angle + compose.angle;
+    const vertextData = (_ as any) .vertexData;
+    let p1 = {
+        x: vertextData[0],
+        y: vertextData[1],
+    }
+    let p2 = {
+        x: vertextData[2],
+        y: vertextData[3]
+    }
+    let p3 = {
+        x: vertextData[4],
+        y: vertextData[5]
+    }
+    const newCenter = {
+        x: (p1.x + p3.x) /2,
+        y: (p1.y + p3.y) / 2
+    }
+    const newP1 = calculateRotatedPointCoordinate(p1, newCenter, -angle);
+    const newW = calculateLength([p1, p2]);
+    const newH = calculateLength([p2, p3]);
+    return {
+        x: newP1.x,
+        y: newP1.y,
+        width: newW,
+        height: newH,
+        angle: angle,
+        zIndex: _.zIndex,
+        needLockProportion: _.needLockProportion,
+        url: _.url
+    }
 }
 export default function App(parent: HTMLElement, WORLD_WIDTH: number, WORLD_HEIGHT: number) {
     app = new PIXI.Application({backgroundColor: 0x000000, antialias:true,forceCanvas: false, resolution: 2});
@@ -392,54 +425,47 @@ export default function App(parent: HTMLElement, WORLD_WIDTH: number, WORLD_HEIG
     // compose
     keyboardjs.bind("ctrl + g", e => {
         if (selectedComponents.length > 1) {
+            const components = []
+            selectedComponents.forEach(sc => {
+                if (sc.typeName === 'component') {
+                    sc.selection.destroy({children: true});
+                    app.stage.removeChild(sc.selection);
+                    components.push(sc);
+                }
+                // 先对已经compose的decompose
+                if (sc.typeName === 'group') {
+                    sc.children.forEach((_: Component) => {
+                        components.push(new Component(getParams(_, sc)))
+                    })
+                    compose.selection.destroy()
+                    compose.destroy();
+                    app.stage.removeChild(compose.selection)
+                    app.stage.removeChild(compose)
+                }
+            })
+            selectedComponents = [];
             compose = createComponent(new Group({
-                components: selectedComponents.map(_ => {
-                    _.selection.visible = false;
-                    return _;
-                }),
-                needLockProportion: selectedComponents.some(_ => _.needLockProportion)
+                components,
+                needLockProportion: components.some(_ => _.needLockProportion)
             }))
             compose.selection.visible = true;
             app.stage.addChild(compose)
             app.stage.addChild(compose.selection)
         }
     });
-    // todo decompose
+    // decompose
     keyboardjs.bind("ctrl + shift + g", e => {
         compose.children.forEach(_ => {
-            const angle = _.angle + compose.angle;
-            const vertextData = _.vertexData;
-            let p1 = {
-                x: vertextData[0],
-                y: vertextData[1],
-            }
-            let p2 = {
-                x: vertextData[2],
-                y: vertextData[3]
-            }
-            let p3 = {
-                x: vertextData[4],
-                y: vertextData[5]
-            }
-            const newCenter = {
-                x: (p1.x + p3.x) /2,
-                y: (p1.y + p3.y) / 2
-            }
-            const newP1 = calculateRotatedPointCoordinate(p1, newCenter, -angle);
-            const newW = calculateLength([p1, p2]);
-            const newH = calculateLength([p2, p3]);
-            app.stage.addChild(createComponent(new Component({
-                x: newP1.x,
-                y: newP1.y,
-                angle: angle,
-                zIndex: _.zIndex,
-                width: newW,
-                height: newH,
-                needLockProportion: false,
-                url: _.url
-            })));
+            app.stage.addChild(createComponent(
+                new Component(getParams(_, compose))
+            ));
         })
+        compose.selection.destroy()
+        compose.destroy();
         app.stage.removeChild(compose.selection)
         app.stage.removeChild(compose)
     })
 }
+
+
+

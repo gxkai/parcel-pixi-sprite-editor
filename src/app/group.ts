@@ -20,7 +20,22 @@ class Group extends PIXI.Container{
             _.interactive = false;
             this.addChild(_)
         })
-        const pointList = components.map(({selection}) => selection.border.points).reduce((previousValue, currentValue) => {
+        const pointList = components.map(_ => {
+            const vertexData = (_ as any) .vertexData;
+            return [{
+                x: vertexData[0],
+                y: vertexData[1],
+            }, {
+                x: vertexData[2],
+                y: vertexData[3],
+            }, {
+                x: vertexData[4],
+                y: vertexData[5],
+            },{
+                x: vertexData[6],
+                y: vertexData[7],
+            }]
+        }).reduce((previousValue, currentValue) => {
             return previousValue.concat(currentValue)
         },[]);
         const pointXList = pointList.map(p => p.x)
