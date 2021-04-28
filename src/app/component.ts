@@ -56,5 +56,10 @@ class Component extends PIXI.Sprite{
             y: this.y
         }, this);
     }
+    public select() {
+        this.selection.visible = true;
+        this.selection.border.visible = true;
+        this.selection.dots.visible = true;
+    }
 }
 export default Component

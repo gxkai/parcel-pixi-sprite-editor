@@ -1,5 +1,7 @@
 import * as PIXI from 'pixi.js-legacy'
 import Border from "./border";
+import Dot from "./dot";
+import Dots from "./dots";
 class Selection extends PIXI.Container{
     constructor(objects: PIXI.DisplayObject[]) {
         super();
@@ -37,7 +39,7 @@ class Selection extends PIXI.Container{
         ])
     }
     public get dots() {
-        const dots = this.children.find(q => q.name === 'dots') as Border;
+        const dots = this.children.find(q => q.name === 'dots') as Dots;
         return dots
     }
     public get border() {

@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js-legacy';
-import calculateComponentPositionAndSize, {calculateSurroundPoints} from "./calculateComponentPositionAndSize";
+import calculateComponentPositionAndSize, {calculateSurroundPoints, getParams} from "./calculateComponentPositionAndSize";
 import {
     angleToRadian, calculateLength, calculateRotatedAngle, calculateRotatedPointCoordinate,
     judeRectanglesCollision, mod360, mod90
@@ -73,10 +73,6 @@ function getCursor() {
     })
 
     return result
-}
-// 获取两个数之间的随机数
-function getRandom(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 // 清除选中
 function clearSelections() {
@@ -209,9 +205,7 @@ function createComponent(object: Component | Group){
                 y: object.y
             }
             let dragging = true;
-            selection.visible = true;
-            selection.border.visible = true;
-            selection.dots.visible = true;
+            object.select();
             function onDragEnd() {
                 dragging = false;
             }
@@ -235,39 +229,6 @@ function createComponent(object: Component | Group){
         })
         return object;
 }
-function getParams(_, compose) {
-    const angle = _.angle + compose.angle;
-    const vertextData = (_ as any) .vertexData;
-    let p1 = {
-        x: vertextData[0],
-        y: vertextData[1],
-    }
-    let p2 = {
-        x: vertextData[2],
-        y: vertextData[3]
-    }
-    let p3 = {
-        x: vertextData[4],
-        y: vertextData[5]
-    }
-    const newCenter = {
-        x: (p1.x + p3.x) /2,
-        y: (p1.y + p3.y) / 2
-    }
-    const newP1 = calculateRotatedPointCoordinate(p1, newCenter, -angle);
-    const newW = calculateLength([p1, p2]);
-    const newH = calculateLength([p2, p3]);
-    return {
-        x: newP1.x,
-        y: newP1.y,
-        width: newW,
-        height: newH,
-        angle: angle,
-        zIndex: _.zIndex,
-        needLockProportion: _.needLockProportion,
-        url: _.url
-    }
-}
 export default function App(parent: HTMLElement, WORLD_WIDTH: number, WORLD_HEIGHT: number) {
     app = new PIXI.Application({backgroundColor: 0x000000, antialias:true,forceCanvas: false, resolution: 2});
     app.renderer.autoDensity = true;
@@ -282,79 +243,6 @@ export default function App(parent: HTMLElement, WORLD_WIDTH: number, WORLD_HEIG
     bg.on('pointerdown', function(event){
         clearSelections();
     })
-    // const mask = new Mask([])
-    // bg.on('pointerdown', function(event){
-    //     let dragging = true;
-    //     const startPoint = {
-    //         x: event.data.global.x,
-    //         y: event.data.global.y
-    //     }
-    //     // clearSelections();
-    //     function onDragEnd() {
-    //         dragging = false;
-    //         mask.update([])
-    //     }
-    //     this.on('pointermove', function (event) {
-    //         if (dragging) {
-    //             const endPoint = {
-    //                 x: event.data.global.x,
-    //                 y: event.data.global.y
-    //             }
-    //             // 顺时针取点
-    //             let xMin, xMax, yMin, yMax;
-    //             if (startPoint.x > endPoint.x) {
-    //                 xMin = endPoint.x;
-    //                 xMax = startPoint.x;
-    //             } else {
-    //                 xMin = startPoint.x;
-    //                 xMax = endPoint.x;
-    //             }
-    //             if (startPoint.y > endPoint.y) {
-    //                 yMin = endPoint.y;
-    //                 yMax = startPoint.y;
-    //             } else {
-    //                 yMin = startPoint.y;
-    //                 yMax = endPoint.y;
-    //             }
-    //             const maskPoints: PIXI.IPointData[] = [{x: xMin, y: yMin}, {x: xMax, y: yMin}, {x: xMax, y: yMax}, {x: xMin, y: yMax}]
-    //             mask.update(maskPoints);
-    //             const newSelectedComponents= selectedComponents.filter(_ => _.typeName !=='group').filter(({selection}) => {
-    //                 const isCollision = judeRectanglesCollision(maskPoints, selection.border.points);
-    //                 selection.border.visible = false;
-    //                 selection.dots.visible = false;
-    //                 return isCollision;
-    //             })
-    //             if (newSelectedComponents.length === 0) {
-    //                 return;
-    //             } else if (newSelectedComponents.length === 1) {
-    //                 const selection = newSelectedComponents[0].selection;
-    //                 selection.visible = true;
-    //                 selection.border.visible = true;
-    //                 selection.dots.visible = true;
-    //                 app.stage.addChild(selection)
-    //             } else {
-    //                 newSelectedComponents.forEach(_ => {
-    //                     const {selection} = _;
-    //                     selection.visible = true;
-    //                     selection.border.visible = true;
-    //                     selection.dots.visible = false;
-    //                     app.stage.addChild(selection)
-    //                 })
-    //                 const pointList = newSelectedComponents.map(({selection}) => selection.border.points).reduce((previousValue, currentValue) => {
-    //                    return previousValue.concat(currentValue)
-    //                 },[]);
-    //                 const pointXList = pointList.map(p => p.x)
-    //                 const pointYList = pointList.map(p => p.y)
-    //                 const xMin =  Math.min(...pointXList);
-    //                 const xMax =  Math.max(...pointXList);
-    //                 const yMin =  Math.min(...pointYList);
-    //                 const yMax =  Math.max(...pointYList);
-    //             }
-    //             app.stage.addChild(mask);
-    //         }
-    //     }).on('pointerup', onDragEnd)
-    //         .on('pointerupoutside', onDragEnd)
-    // });
     app.stage.addChild(bg);
     // object
     const params = {
@@ -448,13 +336,15 @@ export default function App(parent: HTMLElement, WORLD_WIDTH: number, WORLD_HEIG
                 components,
                 needLockProportion: components.some(_ => _.needLockProportion)
             }))
-            compose.selection.visible = true;
+            compose.update();
+            compose.select();
             app.stage.addChild(compose)
             app.stage.addChild(compose.selection)
         }
     });
-    // decompose
+    // decompose fix 反复compose decompose  bug
     keyboardjs.bind("ctrl + shift + g", e => {
+        selectedComponents = [];
         compose.children.forEach(_ => {
             app.stage.addChild(createComponent(
                 new Component(getParams(_, compose))

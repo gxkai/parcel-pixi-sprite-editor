@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js-legacy'
-import {calculateSurroundPoints} from "./calculateComponentPositionAndSize";
+import {calculateSurroundPoints, getParams} from "./calculateComponentPositionAndSize";
 import Selection from "./selection";
 import Component from "./component";
 interface IGroup {
@@ -67,6 +67,14 @@ class Group extends PIXI.Container{
             x: (left + right)/2,
             y: (top + bottom)/2
         }, this)
+    }
+    public select() {
+        this.selection.visible = true;
+        this.selection.border.visible = true;
+        this.selection.dots.visible = true;
+        this.selection.dots.dots.forEach((_, i, array) => {
+            _.visible = i === array.length - 1
+        })
     }
 }
 export default Group;

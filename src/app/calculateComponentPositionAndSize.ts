@@ -1,4 +1,4 @@
-import { calculateRotatedPointCoordinate, getCenterPoint } from './translate'
+import {calculateLength, calculateRotatedPointCoordinate, getCenterPoint, mod360} from './translate'
 
 const funcs = {
     lt: calculateLeftTop,
@@ -10,10 +10,43 @@ const funcs = {
     lb: calculateLeftBottom,
     l: calculateLeft,
 }
-// 计算容器位置
-function calculateContainerPosition(newCenterPoint, container) {
-    container.y = newCenterPoint.y;
-    container.x = newCenterPoint.x;
+// 获取两个数之间的随机数
+function getRandom(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+// 获取组件参数
+export function getParams(_, compose) {
+    const angle = mod360(_.angle + compose.angle);
+    const vertexData = (_ as any) .vertexData;
+    let p1 = {
+        x: vertexData[0],
+        y: vertexData[1],
+    }
+    let p2 = {
+        x: vertexData[2],
+        y: vertexData[3]
+    }
+    let p3 = {
+        x: vertexData[4],
+        y: vertexData[5]
+    }
+    const newCenter = {
+        x: (p1.x + p3.x) /2,
+        y: (p1.y + p3.y) / 2
+    }
+    const newP1 = calculateRotatedPointCoordinate(p1, newCenter, -angle);
+    const newW = calculateLength([p1, p2]);
+    const newH = calculateLength([p2, p3]);
+    return {
+        x: newP1.x,
+        y: newP1.y,
+        width: newW,
+        height: newH,
+        angle: angle,
+        zIndex: _.zIndex,
+        needLockProportion: _.needLockProportion,
+        url: _.url
+    }
 }
 // 计算周围点位置
 export function calculateSurroundPoints(newCenterPoint, container) {
@@ -25,29 +58,29 @@ export function calculateSurroundPoints(newCenterPoint, container) {
         x: newCenterPoint.x + container.width/2,
         y: newCenterPoint.y - container.height/2
     }
-    const LBPoint = {
-        x: newCenterPoint.x - container.width/2,
-        y: newCenterPoint.y + container.height/2
-    }
     const RBPoint = {
         x: newCenterPoint.x + container.width/2,
         y: newCenterPoint.y + container.height/2
     }
-    const TPoint = {
-        x: newCenterPoint.x,
-        y: newCenterPoint.y - container.height/2
-    }
-    const BPoint = {
-        x: newCenterPoint.x,
+    const LBPoint = {
+        x: newCenterPoint.x - container.width/2,
         y: newCenterPoint.y + container.height/2
     }
+    const TPoint = {
+        x: (LTPoint.x + RTPoint.x)/2,
+        y: (LTPoint.y + RTPoint.y)/2
+    }
+    const BPoint = {
+        x: (LBPoint.x + RBPoint.x)/2,
+        y: (LBPoint.y + RBPoint.y)/2
+    }
     const LPoint = {
-        x: newCenterPoint.x - container.width/2,
-        y: newCenterPoint.y
+        x: (LTPoint.x + LBPoint.x)/2,
+        y: (LTPoint.y + LBPoint.y)/2
     }
     const RPoint = {
-        x: newCenterPoint.x + container.width/2,
-        y: newCenterPoint.y
+        x: (RTPoint.x + RBPoint.x)/2,
+        y: (RTPoint.y + RBPoint.y)/2
     }
     const   newLTPoint= calculateRotatedPointCoordinate(LTPoint, newCenterPoint, container.angle);
     const   newRTPoint= calculateRotatedPointCoordinate(RTPoint, newCenterPoint, container.angle);

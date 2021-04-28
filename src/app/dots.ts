@@ -1,7 +1,7 @@
 import * as PIXI from 'pixi.js-legacy'
 import Dot from "./dot";
 class Dots extends PIXI.Container{
-    private dots: Dot[];
+    public dots: Dot[];
     constructor(dots: Dot[]) {
         super();
         this.name = 'dots';
