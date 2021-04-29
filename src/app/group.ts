@@ -2,6 +2,7 @@ import * as PIXI from 'pixi.js-legacy'
 import {calculateSurroundPoints, getParams} from "./calculateComponentPositionAndSize";
 import Selection from "./selection";
 import Component from "./component";
+import {v4} from 'uuid';
 interface IGroup {
      needLockProportion: boolean,
      components: Component[]
@@ -15,6 +16,7 @@ class Group extends PIXI.Container{
     constructor(params: IGroup) {
         super();
         const { needLockProportion, components} = params
+        this.uuid = v4();
         this.components = components;
         components.forEach((_, i) => {
             _.interactive = false;

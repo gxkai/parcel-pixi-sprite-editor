@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js-legacy';
-import UUID from 'uuidjs';
+import {v4} from 'uuid';
 import Selection from './selection'
 import {calculateSurroundPoints} from "./calculateComponentPositionAndSize";
 interface IComponent {
@@ -24,7 +24,7 @@ class Component extends PIXI.Sprite{
     constructor(params: IComponent) {
         super(PIXI.Texture.from(params.url));
         this.name = 'component';
-        this.uuid = params.uuid || UUID.generate();
+        this.uuid = params.uuid || v4();
         this.url = params.url;
         this.pid = params.pid;
         this.draw(params)
