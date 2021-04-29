@@ -7,7 +7,7 @@ import calculateComponentPositionAndSize, { getParams } from "./calculateCompone
 import Dots from "./dots";
 import Selection from "./selection";
 import * as PIXI from "pixi.js-legacy";
-import keyboardjs from "keyboardjs";
+import * as keyboardjs from "keyboardjs";
 import Background from "./background";
 //选中元素
 let selectedComponents: (Component | Group) [] = [];
