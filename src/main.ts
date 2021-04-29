@@ -32,6 +32,8 @@ function App(parent: HTMLElement, WORLD_WIDTH: number, WORLD_HEIGHT: number) {
     }
     const comp2 = new Transformer(new Component(params3), app).object;
     const comp1 = new Transformer(new Component(params), app).object;
+    Transformer.bindBg(app);
+    Transformer.bindShotcuts(app);
     app.stage.addChild(comp2)
     app.stage.addChild(comp1)
 }

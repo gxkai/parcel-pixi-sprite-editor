@@ -7,7 +7,7 @@ import calculateComponentPositionAndSize, { getParams } from "./calculateCompone
 import Dots from "./dots";
 import Selection from "./selection";
 import * as PIXI from "pixi.js-legacy";
-import * as keyboardjs from "keyboardjs";
+import keyboardjs from "keyboardjs";
 import Background from "./background";
 //选中元素
 let selectedComponents: (Component | Group) [] = [];
@@ -70,14 +70,6 @@ class Transformer {
     private readonly app;
     public object;
     constructor(object: Component | Group, app) {
-        let bg = new Background({
-            width: app.screen.width,
-            height: app.screen.height
-        })
-        bg.on('pointerdown', function(event){
-            Transformer.clearSelections();
-        })
-        app.stage.addChild(bg);
         this.object = object;
         this.app = app;
         const [
@@ -227,10 +219,18 @@ class Transformer {
                         }
                     })
             })
-        this.bindShotcuts();
     }
-    public bindShotcuts() {
-        const app = this.app;
+    public static bindBg(app) {
+        let bg = new Background({
+            width: app.screen.width,
+            height: app.screen.height
+        })
+        bg.on('pointerdown', function(event){
+            Transformer.clearSelections();
+        })
+        app.stage.addChild(bg);
+    }
+    public static bindShotcuts(app) {
         keyboardjs.bind(
             "shift",
             e => {

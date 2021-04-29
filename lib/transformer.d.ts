@@ -4,7 +4,8 @@ declare class Transformer {
     private readonly app;
     object: any;
     constructor(object: Component | Group, app: any);
-    bindShotcuts(): void;
+    static bindBg(app: any): void;
+    static bindShotcuts(app: any): void;
     static clearSelections(): void;
     static get selectedComponents(): (Component | Group)[];
 }

@@ -1,10 +1,10 @@
 {
     "compilerOptions": {
-        "module": "commonjs",
+        "target": "esnext",
+        "module": "esnext",
         "moduleResolution": "node",
         "declaration": true,
         "outDir": "./lib/",
-        "target": "es5",
         "sourceMap": false,
         "allowJs": true,
         "downlevelIteration": true,
@@ -18,7 +18,7 @@
         "typeRoots": [
             "node_modules/@types"
         ],
-      "allowSyntheticDefaultImports": false
+      "allowSyntheticDefaultImports": true
     },
     "include": [
         "src/app/**/*.ts",
