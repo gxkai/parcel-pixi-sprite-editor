@@ -5,7 +5,7 @@
         "declaration": true,
         "outDir": "./lib/",
         "target": "es5",
-        "sourceMap": true,
+        "sourceMap": false,
         "allowJs": true,
         "downlevelIteration": true,
         "lib": [
