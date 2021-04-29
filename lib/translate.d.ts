@@ -1,3 +1,4 @@
+import * as PIXI from "pixi.js-legacy";
 export declare function angleToRadian(angle: any): number;
 /**
  * 计算根据圆心旋转后的点的坐标

@@ -1,3 +1,4 @@
+import * as PIXI from "pixi.js-legacy";
 // 角度转弧度
 // Math.PI = 180 度
 export function angleToRadian(angle) {

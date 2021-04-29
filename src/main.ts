@@ -1,6 +1,8 @@
-import Transformer from "./app/transformer";
-import Component from "./app/component";
+// import Transformer from "./app/transformer";
+// import Component from "./app/component";
 import * as PIXI from "pixi.js-legacy";
+import Transformer from "pixi-transformer/lib/transformer";
+import Component from "pixi-transformer/lib/component";
 (window as any).PIXI = PIXI;
 let app: PIXI.Application;
 function App(parent: HTMLElement, WORLD_WIDTH: number, WORLD_HEIGHT: number) {
