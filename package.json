@@ -1,6 +1,6 @@
 {
   "name": "pixi-transformer",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "main": "lib/app/app.js",
   "types": "lib/app/app.d.ts",
