@@ -13,6 +13,10 @@
   },
   "author": "gxkai",
   "license": "MIT",
+  "homepage": "https://github.com/gxkai/parcel-pixi-sprite-editor#readme",
+  "repository": {
+    "url": "https://github.com/gxkai/parcel-pixi-sprite-editor"
+  },
   "dependencies": {
     "keyboardjs": "^2.6.4",
     "pixi-layers": "^0.3.1",
