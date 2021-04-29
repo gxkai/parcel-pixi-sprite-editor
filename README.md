@@ -47,3 +47,21 @@ npm i pixi-transformer
  
  App(document.body,  window.innerWidth, window.innerHeight);
 ```
+### Component
+| prop | type | desc |
+| ---- | ---- | ---- |
+| x | number |  |
+| y | number |  |
+| angle | number |  |
+| zIndex | number |  |
+| width | number |  |
+| height | number |  |
+| needLockProportion | boolean | 等比例缩放  |
+| url | string | 图片路径 |
+| uuid | string |  |
+| pid | string |  |
+### Group
+| prop | type | desc |
+| ---- | ---- | ---- |
+| needLockProportion | boolean | 等比例缩放  |
+| components | array |   |
